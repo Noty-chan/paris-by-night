@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ATTRIBUTE_GROUPS,
   Character,
@@ -16,6 +16,16 @@ type Props = {
 };
 
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const SHEET_SECTIONS = [
+  ["identity", "00", "Личность"],
+  ["attributes", "01", "Атрибуты"],
+  ["skills", "02", "Навыки"],
+  ["blood", "03", "Кровь"],
+  ["disciplines", "04", "Дисциплины"],
+  ["advantages", "05", "Преимущества"],
+  ["humanity", "06", "Человечность"],
+  ["story", "07", "История"],
+] as const;
 
 function Dots({ value, max = 5, onChange }: { value: number; max?: number; onChange: (n: number) => void }) {
   return (
@@ -122,6 +132,7 @@ function DisciplineList({ entries, onChange }: { entries: DisciplineEntry[]; onC
 export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState("identity");
   const set = <K extends keyof Character>(key: K, value: Character[K]) => onChange({ ...character, [key]: value });
   const baseHealth = (character.attributes.Выносливость ?? 1) + 3;
   const baseWillpower = (character.attributes.Самообладание ?? 1) + (character.attributes.Решительность ?? 1);
@@ -129,10 +140,31 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
   const setHealthMax = (max: number) => onChange({ ...character, healthMax: max, healthDamage: resizeDamage(character.healthDamage, max) });
   const setWillpowerMax = (max: number) => onChange({ ...character, willpowerMax: max, willpowerDamage: resizeDamage(character.willpowerDamage, max) });
 
+  useEffect(() => {
+    const scrollRoot = document.querySelector("main");
+    if (!scrollRoot) return;
+    const updateSection = () => {
+      const marker = scrollRoot.getBoundingClientRect().top + 150;
+      let current: string = SHEET_SECTIONS[0][0];
+      SHEET_SECTIONS.forEach(([id]) => {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= marker) current = id;
+      });
+      setActiveSection(current);
+    };
+    updateSection();
+    scrollRoot.addEventListener("scroll", updateSection, { passive: true });
+    return () => scrollRoot.removeEventListener("scroll", updateSection);
+  }, []);
+
   return (
     <div className="paper sheet full-sheet">
       <nav className="sheet-index" aria-label="Разделы листа">
-        <a href="#identity">Личность</a><a href="#attributes">Атрибуты</a><a href="#skills">Навыки</a><a href="#blood">Кровь</a><a href="#advantages">Преимущества</a><a href="#story">История</a>
+        {SHEET_SECTIONS.map(([id, index, label]) => (
+          <a href={`#${id}`} key={id} className={activeSection === id ? "active" : ""} onClick={() => setActiveSection(id)}>
+            <small>{index}</small><span>{label}</span>
+          </a>
+        ))}
       </nav>
 
       <SectionTitle index="00" title="Личность" hint="Кто ты этой ночью" id="identity" />
