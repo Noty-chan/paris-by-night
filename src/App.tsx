@@ -1,0 +1,227 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Character, defaultCharacter } from "./data/character";
+
+type Tab = "home" | "sheet" | "dice" | "templates";
+type Die = { value: number; hunger: boolean };
+
+const NAV: { id: Tab; label: string; index: string }[] = [
+  { id: "home", label: "Сводка", index: "00" },
+  { id: "sheet", label: "Лист", index: "01" },
+  { id: "dice", label: "Броски", index: "02" },
+  { id: "templates", label: "Шаблоны", index: "03" },
+];
+
+const ATTR_GROUPS = [
+  ["Физические", ["Сила", "Ловкость", "Выносливость"]],
+  ["Социальные", ["Обаяние", "Манипуляция", "Самообладание"]],
+  ["Ментальные", ["Интеллект", "Смекалка", "Решительность"]],
+] as const;
+
+const TEMPLATES = [
+  { code: "PERS", title: "Персонаж", text: "Имя, роль в городе, желание, страх, рычаг давления и три версии правды." },
+  { code: "FACT", title: "Фракция", text: "Публичная цель, настоящий интерес, ресурсы, раскол внутри и отношения с соседями." },
+  { code: "LOCI", title: "Место", text: "Впечатление, хозяин, правило территории, опасность и деталь, которую запомнят." },
+  { code: "RUMR", title: "Слух", text: "Кто рассказал, кому выгодно, что в нём правда и что изменится, если поверить." },
+];
+
+function loadCharacter(): Character {
+  try {
+    const saved = localStorage.getItem("paris-character");
+    return saved ? { ...defaultCharacter, ...JSON.parse(saved) } : defaultCharacter;
+  } catch {
+    return defaultCharacter;
+  }
+}
+
+function Dots({ value, max = 5, onChange }: { value: number; max?: number; onChange: (n: number) => void }) {
+  return (
+    <div className="dots" role="group" aria-label={`Значение ${value} из ${max}`}>
+      {Array.from({ length: max }, (_, i) => (
+        <button
+          className={i < value ? "dot active" : "dot"}
+          key={i}
+          onClick={() => onChange(i + 1 === value ? Math.max(0, value - 1) : i + 1)}
+          aria-label={`${i + 1}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <input value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
+function Tracker({ label, value, max, onChange, danger }: { label: string; value: number; max: number; onChange: (n: number) => void; danger?: boolean }) {
+  return (
+    <div className={`tracker ${danger ? "tracker-danger" : ""}`}>
+      <div className="tracker-head"><span>{label}</span><strong>{value}/{max}</strong></div>
+      <div className="tracker-cells">
+        {Array.from({ length: max }, (_, i) => (
+          <button key={i} className={i < value ? "filled" : ""} onClick={() => onChange(i + 1 === value ? i : i + 1)} aria-label={`${label}: ${i + 1}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DiceFace({ die }: { die: Die }) {
+  return <div className={`die ${die.hunger ? "hunger" : ""}`}><span>{die.value}</span><small>{die.hunger ? "голод" : "d10"}</small></div>;
+}
+
+function interpretDice(dice: Die[], difficulty: number) {
+  if (!dice.length) return { title: "Пул готов", text: "Укажи кости и соверши бросок.", success: false };
+  const successes = dice.filter((d) => d.value >= 6).length;
+  const tens = dice.filter((d) => d.value === 10);
+  const critPairs = Math.floor(tens.length / 2);
+  const total = successes + critPairs * 2;
+  const messy = critPairs > 0 && tens.some((d) => d.hunger);
+  const bestial = total < difficulty && dice.some((d) => d.hunger && d.value === 1);
+  if (messy) return { title: `Грязный крит · ${total} успехов`, text: "Ты добиваешься своего, но Зверь оставляет след.", success: true };
+  if (bestial) return { title: `Звериный провал · ${total} успехов`, text: "Неудача пробуждает Компульсию или иное проявление Зверя.", success: false };
+  if (critPairs) return { title: `Критический успех · ${total} успехов`, text: "Пара десяток добавила два дополнительных успеха.", success: true };
+  if (total >= difficulty) return { title: `Успех · ${total} против ${difficulty}`, text: "Действие удалось.", success: true };
+  return { title: `Провал · ${total} против ${difficulty}`, text: "Цель не достигнута — ситуация меняется.", success: false };
+}
+
+export function App() {
+  const [tab, setTab] = useState<Tab>("home");
+  const [character, setCharacter] = useState<Character>(loadCharacter);
+  const [saved, setSaved] = useState(true);
+  const [pool, setPool] = useState(6);
+  const [hunger, setHunger] = useState(1);
+  const [difficulty, setDifficulty] = useState(2);
+  const [dice, setDice] = useState<Die[]>([]);
+  const importRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setSaved(false);
+    const timer = window.setTimeout(() => {
+      localStorage.setItem("paris-character", JSON.stringify({ ...character, updatedAt: new Date().toISOString() }));
+      setSaved(true);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [character]);
+
+  const update = <K extends keyof Character>(key: K, value: Character[K]) => setCharacter((c) => ({ ...c, [key]: value }));
+  const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
+
+  const roll = () => {
+    const hungerCount = Math.min(hunger, pool);
+    setDice(Array.from({ length: pool }, (_, i) => ({ value: Math.floor(Math.random() * 10) + 1, hunger: i >= pool - hungerCount })));
+  };
+
+  const exportSheet = () => {
+    const blob = new Blob([JSON.stringify(character, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${character.name || "character"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importSheet = async (file?: File) => {
+    if (!file) return;
+    try { setCharacter({ ...defaultCharacter, ...JSON.parse(await file.text()) }); }
+    catch { window.alert("Не удалось прочитать лист. Нужен JSON, экспортированный с этого сайта."); }
+  };
+
+  return (
+    <div className="app-shell">
+      <div className="noise" />
+      <header className="topbar">
+        <button className="brand" onClick={() => setTab("home")}>
+          <span className="brand-mark">P//N</span>
+          <span><strong>PARIS // NUIT</strong><small>chronicle utility · v5</small></span>
+        </button>
+        <div className="connection"><i /> réseau privé <span>17.10.2004 · 00:42</span></div>
+      </header>
+
+      <aside className="sidebar">
+        <nav aria-label="Основная навигация">
+          {NAV.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><small>{item.index}</small>{item.label}</button>)}
+        </nav>
+        <div className="side-note"><span>архив</span><strong>PAR–04</strong><p>Неофициальный помощник хроники. Доступ зарегистрирован.</p></div>
+      </aside>
+
+      <main>
+        {tab === "home" && (
+          <section className="page home-page">
+            <div className="eyebrow">Сводка ночи / dossier 001</div>
+            <div className="hero-grid">
+              <div>
+                <h1>Париж никогда<br /><em>не спит.</em></h1>
+                <p className="lead">Он просто закрывает глаза, чтобы не видеть, кто проходит по его улицам после полуночи.</p>
+                <div className="hero-actions"><button className="primary" onClick={() => setTab("sheet")}>Открыть досье</button><button className="secondary" onClick={() => setTab("dice")}>Бросить кости</button></div>
+              </div>
+              <div className="metro-card">
+                <div className="metro-top"><span>RÉSEAU NOCTURNE</span><small>ligne privée</small></div>
+                <div className="route"><i /><b /><i /><b /><i className="alert" /></div>
+                <div className="stations"><span>ÉLYSÉE</span><span>RIVE DROITE</span><span>INCONNU</span></div>
+                <div className="stamp">ACCÈS<br />RESTREINT</div>
+              </div>
+            </div>
+            <div className="summary-grid">
+              <article><span className="card-code">DOSSIER ACTIF</span><strong>{character.name}</strong><p>{character.clan} · {character.concept}</p><button onClick={() => setTab("sheet")}>Продолжить заполнение →</button></article>
+              <article><span className="card-code">СОСТОЯНИЕ</span><strong>Голод {character.hunger}</strong><p>Человечность {character.humanity} · Могущество крови {character.bloodPotency}</p><button onClick={() => setTab("dice")}>Перейти к броскам →</button></article>
+              <article className="signal"><span className="card-code">ВХОДЯЩИЙ СИГНАЛ</span><strong>Источник не установлен</strong><p>«Не доверяй тому, кто первым назовёт цену»</p><small>получено 00:37</small></article>
+            </div>
+          </section>
+        )}
+
+        {tab === "sheet" && (
+          <section className="page">
+            <div className="page-head"><div><div className="eyebrow">Личное дело / локальная копия</div><h2>Лист персонажа</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
+            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт</button><input ref={importRef} type="file" accept="application/json" hidden onChange={(e) => importSheet(e.target.files?.[0])} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист?") && setCharacter(defaultCharacter)}>Сбросить</button></div>
+            <div className="paper sheet">
+              <div className="sheet-id"><Field label="Имя" value={character.name} onChange={(v) => update("name", v)} /><Field label="Концепция" value={character.concept} onChange={(v) => update("concept", v)} /><Field label="Игрок" value={character.player} onChange={(v) => update("player", v)} /><Field label="Клан" value={character.clan} onChange={(v) => update("clan", v)} /><Field label="Сир" value={character.sire} onChange={(v) => update("sire", v)} /><Field label="Тип хищника" value={character.predatorType} onChange={(v) => update("predatorType", v)} /></div>
+              <div className="rule-title"><span>01</span><h3>Характеристики</h3></div>
+              <div className="attribute-grid">{ATTR_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><span>{attr}</span><Dots value={character.attributes[attr]} onChange={(v) => update("attributes", { ...character.attributes, [attr]: v })} /></div>)}</div>)}</div>
+              <div className="rule-title"><span>02</span><h3>Навыки</h3></div>
+              <div className="skills-grid">{Object.entries(character.skills).map(([skill, value]) => <div className="stat" key={skill}><span>{skill.replace("_", " ")}</span><Dots value={value} onChange={(v) => update("skills", { ...character.skills, [skill]: v })} /></div>)}</div>
+              <div className="rule-title"><span>03</span><h3>Состояние крови</h3></div>
+              <div className="trackers"><Tracker label="Голод" value={character.hunger} max={5} danger onChange={(v) => update("hunger", v)} /><Tracker label="Человечность" value={character.humanity} max={10} onChange={(v) => update("humanity", v)} /><Tracker label="Воля" value={character.willpower} max={10} onChange={(v) => update("willpower", v)} /><Tracker label="Здоровье" value={character.health} max={10} onChange={(v) => update("health", v)} /></div>
+              <div className="sheet-text-grid"><label><span>Амбиция</span><textarea value={character.ambition} onChange={(e) => update("ambition", e.target.value)} /></label><label><span>Желание</span><textarea value={character.desire} onChange={(e) => update("desire", e.target.value)} /></label><label><span>Убеждения</span><textarea value={character.convictions} onChange={(e) => update("convictions", e.target.value)} /></label><label><span>Опоры</span><textarea value={character.touchstones} onChange={(e) => update("touchstones", e.target.value)} /></label><label className="wide"><span>Заметки</span><textarea value={character.notes} onChange={(e) => update("notes", e.target.value)} /></label></div>
+            </div>
+          </section>
+        )}
+
+        {tab === "dice" && (
+          <section className="page dice-page">
+            <div className="page-head"><div><div className="eyebrow">Механика V5 / локальный протокол</div><h2>Броски</h2></div><a className="external" href="https://wta5.ru/vampire/rules" target="_blank" rel="noreferrer">Полные правила ↗</a></div>
+            <div className="dice-layout">
+              <div className="roller panel">
+                <span className="panel-label">Собрать пул</span>
+                <div className="number-controls"><label><span>Всего костей</span><input type="number" min="1" max="20" value={pool} onChange={(e) => setPool(Math.max(1, Math.min(20, +e.target.value)))} /></label><label><span>Голод</span><input type="number" min="0" max="5" value={hunger} onChange={(e) => setHunger(Math.max(0, Math.min(5, +e.target.value)))} /></label><label><span>Сложность</span><input type="number" min="1" max="10" value={difficulty} onChange={(e) => setDifficulty(Math.max(1, Math.min(10, +e.target.value)))} /></label></div>
+                <button className="roll-button" onClick={roll}><span>БРОСИТЬ</span><small>{pool - Math.min(pool, hunger)} обычных + {Math.min(pool, hunger)} голодных</small></button>
+                <div className="dice-tray">{dice.length ? dice.map((die, i) => <DiceFace die={die} key={`${i}-${die.value}`} />) : <p>Результат появится здесь</p>}</div>
+                <div className={`result ${result.success ? "success" : ""}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
+              </div>
+              <aside className="quick-rules panel"><span className="panel-label">Быстрая памятка</span><h3>Читаем кости</h3><dl><div><dt>6–9</dt><dd>один успех</dd></div><div><dt>10 + 10</dt><dd>крит: четыре успеха</dd></div><div><dt>10 голода</dt><dd>может сделать крит грязным</dd></div><div><dt>1 голода</dt><dd>может сделать провал звериным</dd></div></dl><div className="rule-note">Кости Голода заменяют обычные кости в пуле, но не добавляются к нему.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a></aside>
+            </div>
+          </section>
+        )}
+
+        {tab === "templates" && (
+          <section className="page templates-page">
+            <div className="page-head"><div><div className="eyebrow">Заготовки хроники / черновой архив</div><h2>Шаблоны</h2></div><span className="muted">4 формуляра</span></div>
+            <p className="intro">Короткие структуры, из которых мы позже соберём живой Париж. Они удерживают важное и не заставляют заполнять энциклопедию.</p>
+            <div className="template-grid">{TEMPLATES.map((item, i) => <article key={item.code}><div><span>{item.code}–0{i + 1}</span><small>formulaire</small></div><h3>{item.title}</h3><p>{item.text}</p><button onClick={() => navigator.clipboard?.writeText(item.text)}>Копировать основу</button></article>)}</div>
+            <div className="incoming"><span>СЛЕДУЮЩИЙ ПАКЕТ</span><p>Домены · Долги · События · Улики</p><small>ожидает наполнения мира</small></div>
+          </section>
+        )}
+      </main>
+      <footer>
+        <span className="build">PARIS // NUIT · BUILD 0.1</span>
+        <a href="https://www.paradoxinteractive.com/games/world-of-darkness/community/dark-pack-agreement" target="_blank" rel="noreferrer"><img src="./dark-pack.webp" alt="Dark Pack" /></a>
+        <span className="legal">NOT OFFICIAL WORLD OF DARKNESS MATERIAL · Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved.</span>
+      </footer>
+    </div>
+  );
+}
