@@ -157,6 +157,33 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
     return () => scrollRoot.removeEventListener("scroll", updateSection);
   }, []);
 
+  useEffect(() => {
+    const goToSection = (index: number) => {
+      const safeIndex = Math.max(0, Math.min(SHEET_SECTIONS.length - 1, index));
+      const id = SHEET_SECTIONS[safeIndex][0];
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.replaceState(null, "", `#${id}`);
+      setActiveSection(id);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target?.tagName ?? "") || event.ctrlKey || event.metaKey || event.altKey) return;
+      const currentIndex = SHEET_SECTIONS.findIndex(([id]) => id === activeSection);
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        goToSection(currentIndex + 1);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        goToSection(currentIndex - 1);
+      } else if (/^[1-8]$/.test(event.key)) {
+        event.preventDefault();
+        goToSection(Number(event.key) - 1);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeSection]);
+
   return (
     <div className="paper sheet full-sheet">
       <nav className="sheet-index" aria-label="Разделы листа">
@@ -165,6 +192,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
             <small>{index}</small><span>{label}</span>
           </a>
         ))}
+        <span className="sheet-key-hint"><kbd>←</kbd><kbd>→</kbd><b>разделы</b><kbd>1–8</kbd></span>
       </nav>
 
       <SectionTitle index="00" title="Личность" hint="Кто ты этой ночью" id="identity" />

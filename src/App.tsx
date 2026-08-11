@@ -56,6 +56,8 @@ export function App() {
   const [difficulty, setDifficulty] = useState(2);
   const [dice, setDice] = useState<Die[]>([]);
   const [rollSource, setRollSource] = useState("");
+  const [rouseResult, setRouseResult] = useState<number | null>(null);
+  const [rouseApplied, setRouseApplied] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -80,6 +82,19 @@ export function App() {
     setHunger(Math.min(preparedHunger, preparedPool));
     setDice([]);
     setTab("dice");
+  };
+
+  const rollRouse = () => {
+    setRouseResult(Math.floor(Math.random() * 10) + 1);
+    setRouseApplied(false);
+  };
+
+  const applyRouseHunger = () => {
+    if (rouseApplied || rouseResult === null || rouseResult >= 6 || character.hunger >= 5) return;
+    const nextHunger = Math.min(5, character.hunger + 1);
+    setCharacter((current) => ({ ...current, hunger: nextHunger }));
+    setHunger((current) => Math.min(pool, Math.max(current, nextHunger)));
+    setRouseApplied(true);
   };
 
   const exportSheet = () => {
@@ -160,7 +175,17 @@ export function App() {
                 <div className="dice-tray">{dice.length ? dice.map((die, i) => <DiceFace die={die} key={`${i}-${die.value}`} />) : <p>Результат появится здесь</p>}</div>
                 <div className={`result ${result.success ? "success" : ""}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
               </div>
-              <aside className="quick-rules panel"><span className="panel-label">Быстрая памятка</span><h3>Читаем кости</h3><dl><div><dt>6–9</dt><dd>один успех</dd></div><div><dt>10 + 10</dt><dd>крит: четыре успеха</dd></div><div><dt>10 голода</dt><dd>может сделать крит грязным</dd></div><div><dt>1 голода</dt><dd>может сделать провал звериным</dd></div></dl><div className="rule-note">Кости Голода заменяют обычные кости в пуле, но не добавляются к нему.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a></aside>
+              <aside className="quick-rules panel">
+                <span className="panel-label">Быстрые действия</span>
+                <div className={`rouse-check ${rouseResult !== null && rouseResult < 6 ? "failed" : ""}`}>
+                  <div><small>Проверка пробуждения</small><strong>{rouseResult ?? "d10"}</strong></div>
+                  {rouseResult === null && <p>6–10 — успех. 1–5 — Голод повышается на один.</p>}
+                  {rouseResult !== null && <p>{rouseResult >= 6 ? "Кровь откликается. Голод не меняется." : character.hunger >= 5 ? "Провал. Голод уже предельный." : "Провал. Голод может увеличиться."}</p>}
+                  <button type="button" onClick={rollRouse}>Бросить одну кость</button>
+                  {rouseResult !== null && rouseResult < 6 && character.hunger < 5 && <button type="button" className="apply-hunger" disabled={rouseApplied} onClick={applyRouseHunger}>{rouseApplied ? "Голод применён" : `Применить: Голод ${character.hunger} → ${character.hunger + 1}`}</button>}
+                </div>
+                <h3>Читаем кости</h3><dl><div><dt>6–9</dt><dd>один успех</dd></div><div><dt>10 + 10</dt><dd>крит: четыре успеха</dd></div><div><dt>10 голода</dt><dd>может сделать крит грязным</dd></div><div><dt>1 голода</dt><dd>может сделать провал звериным</dd></div></dl><div className="rule-note">Кости Голода заменяют обычные кости в пуле, но не добавляются к нему.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a>
+              </aside>
             </div>
           </section>
         )}
