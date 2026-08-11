@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Character, defaultCharacter } from "./data/character";
+import { Character, defaultCharacter, migrateCharacter } from "./data/character";
+import { CharacterSheet } from "./components/CharacterSheet";
 
 type Tab = "home" | "sheet" | "dice" | "templates";
 type Die = { value: number; hunger: boolean };
@@ -11,12 +12,6 @@ const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "templates", label: "Шаблоны", index: "03" },
 ];
 
-const ATTR_GROUPS = [
-  ["Физические", ["Сила", "Ловкость", "Выносливость"]],
-  ["Социальные", ["Обаяние", "Манипуляция", "Самообладание"]],
-  ["Ментальные", ["Интеллект", "Смекалка", "Решительность"]],
-] as const;
-
 const TEMPLATES = [
   { code: "PERS", title: "Персонаж", text: "Имя, роль в городе, желание, страх, рычаг давления и три версии правды." },
   { code: "FACT", title: "Фракция", text: "Публичная цель, настоящий интерес, ресурсы, раскол внутри и отношения с соседями." },
@@ -27,47 +22,10 @@ const TEMPLATES = [
 function loadCharacter(): Character {
   try {
     const saved = localStorage.getItem("paris-character");
-    return saved ? { ...defaultCharacter, ...JSON.parse(saved) } : defaultCharacter;
+    return saved ? migrateCharacter(JSON.parse(saved)) : defaultCharacter;
   } catch {
     return defaultCharacter;
   }
-}
-
-function Dots({ value, max = 5, onChange }: { value: number; max?: number; onChange: (n: number) => void }) {
-  return (
-    <div className="dots" role="group" aria-label={`Значение ${value} из ${max}`}>
-      {Array.from({ length: max }, (_, i) => (
-        <button
-          className={i < value ? "dot active" : "dot"}
-          key={i}
-          onClick={() => onChange(i + 1 === value ? Math.max(0, value - 1) : i + 1)}
-          aria-label={`${i + 1}`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} />
-    </label>
-  );
-}
-
-function Tracker({ label, value, max, onChange, danger }: { label: string; value: number; max: number; onChange: (n: number) => void; danger?: boolean }) {
-  return (
-    <div className={`tracker ${danger ? "tracker-danger" : ""}`}>
-      <div className="tracker-head"><span>{label}</span><strong>{value}/{max}</strong></div>
-      <div className="tracker-cells">
-        {Array.from({ length: max }, (_, i) => (
-          <button key={i} className={i < value ? "filled" : ""} onClick={() => onChange(i + 1 === value ? i : i + 1)} aria-label={`${label}: ${i + 1}`} />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function DiceFace({ die }: { die: Die }) {
@@ -108,7 +66,6 @@ export function App() {
     return () => clearTimeout(timer);
   }, [character]);
 
-  const update = <K extends keyof Character>(key: K, value: Character[K]) => setCharacter((c) => ({ ...c, [key]: value }));
   const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
 
   const roll = () => {
@@ -128,7 +85,7 @@ export function App() {
 
   const importSheet = async (file?: File) => {
     if (!file) return;
-    try { setCharacter({ ...defaultCharacter, ...JSON.parse(await file.text()) }); }
+    try { setCharacter(migrateCharacter(JSON.parse(await file.text()))); }
     catch { window.alert("Не удалось прочитать лист. Нужен JSON, экспортированный с этого сайта."); }
   };
 
@@ -179,16 +136,7 @@ export function App() {
           <section className="page">
             <div className="page-head"><div><div className="eyebrow">Личное дело / локальная копия</div><h2>Лист персонажа</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
             <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт</button><input ref={importRef} type="file" accept="application/json" hidden onChange={(e) => importSheet(e.target.files?.[0])} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист?") && setCharacter(defaultCharacter)}>Сбросить</button></div>
-            <div className="paper sheet">
-              <div className="sheet-id"><Field label="Имя" value={character.name} onChange={(v) => update("name", v)} /><Field label="Концепция" value={character.concept} onChange={(v) => update("concept", v)} /><Field label="Игрок" value={character.player} onChange={(v) => update("player", v)} /><Field label="Клан" value={character.clan} onChange={(v) => update("clan", v)} /><Field label="Сир" value={character.sire} onChange={(v) => update("sire", v)} /><Field label="Тип хищника" value={character.predatorType} onChange={(v) => update("predatorType", v)} /></div>
-              <div className="rule-title"><span>01</span><h3>Характеристики</h3></div>
-              <div className="attribute-grid">{ATTR_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><span>{attr}</span><Dots value={character.attributes[attr]} onChange={(v) => update("attributes", { ...character.attributes, [attr]: v })} /></div>)}</div>)}</div>
-              <div className="rule-title"><span>02</span><h3>Навыки</h3></div>
-              <div className="skills-grid">{Object.entries(character.skills).map(([skill, value]) => <div className="stat" key={skill}><span>{skill.replace("_", " ")}</span><Dots value={value} onChange={(v) => update("skills", { ...character.skills, [skill]: v })} /></div>)}</div>
-              <div className="rule-title"><span>03</span><h3>Состояние крови</h3></div>
-              <div className="trackers"><Tracker label="Голод" value={character.hunger} max={5} danger onChange={(v) => update("hunger", v)} /><Tracker label="Человечность" value={character.humanity} max={10} onChange={(v) => update("humanity", v)} /><Tracker label="Воля" value={character.willpower} max={10} onChange={(v) => update("willpower", v)} /><Tracker label="Здоровье" value={character.health} max={10} onChange={(v) => update("health", v)} /></div>
-              <div className="sheet-text-grid"><label><span>Амбиция</span><textarea value={character.ambition} onChange={(e) => update("ambition", e.target.value)} /></label><label><span>Желание</span><textarea value={character.desire} onChange={(e) => update("desire", e.target.value)} /></label><label><span>Убеждения</span><textarea value={character.convictions} onChange={(e) => update("convictions", e.target.value)} /></label><label><span>Опоры</span><textarea value={character.touchstones} onChange={(e) => update("touchstones", e.target.value)} /></label><label className="wide"><span>Заметки</span><textarea value={character.notes} onChange={(e) => update("notes", e.target.value)} /></label></div>
-            </div>
+            <CharacterSheet character={character} onChange={setCharacter} />
           </section>
         )}
 
