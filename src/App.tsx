@@ -55,6 +55,7 @@ export function App() {
   const [hunger, setHunger] = useState(1);
   const [difficulty, setDifficulty] = useState(2);
   const [dice, setDice] = useState<Die[]>([]);
+  const [rollSource, setRollSource] = useState("");
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,6 +72,14 @@ export function App() {
   const roll = () => {
     const hungerCount = Math.min(hunger, pool);
     setDice(Array.from({ length: pool }, (_, i) => ({ value: Math.floor(Math.random() * 10) + 1, hunger: i >= pool - hungerCount })));
+  };
+
+  const prepareRoll = (source: string, preparedPool: number, preparedHunger: number) => {
+    setRollSource(source);
+    setPool(preparedPool);
+    setHunger(Math.min(preparedHunger, preparedPool));
+    setDice([]);
+    setTab("dice");
   };
 
   const exportSheet = () => {
@@ -136,7 +145,7 @@ export function App() {
           <section className="page">
             <div className="page-head"><div><div className="eyebrow">Личное дело / локальная копия</div><h2>Лист персонажа</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
             <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт</button><input ref={importRef} type="file" accept="application/json" hidden onChange={(e) => importSheet(e.target.files?.[0])} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист?") && setCharacter(defaultCharacter)}>Сбросить</button></div>
-            <CharacterSheet character={character} onChange={setCharacter} />
+            <CharacterSheet character={character} onChange={setCharacter} onPrepareRoll={prepareRoll} />
           </section>
         )}
 
@@ -145,7 +154,7 @@ export function App() {
             <div className="page-head"><div><div className="eyebrow">Механика V5 / локальный протокол</div><h2>Броски</h2></div><a className="external" href="https://wta5.ru/vampire/rules" target="_blank" rel="noreferrer">Полные правила ↗</a></div>
             <div className="dice-layout">
               <div className="roller panel">
-                <span className="panel-label">Собрать пул</span>
+                <span className="panel-label">{rollSource ? `Проверка / ${rollSource}` : "Собрать пул"}</span>
                 <div className="number-controls"><label><span>Всего костей</span><input type="number" min="1" max="20" value={pool} onChange={(e) => setPool(Math.max(1, Math.min(20, +e.target.value)))} /></label><label><span>Голод</span><input type="number" min="0" max="5" value={hunger} onChange={(e) => setHunger(Math.max(0, Math.min(5, +e.target.value)))} /></label><label><span>Сложность</span><input type="number" min="1" max="10" value={difficulty} onChange={(e) => setDifficulty(Math.max(1, Math.min(10, +e.target.value)))} /></label></div>
                 <button className="roll-button" onClick={roll}><span>БРОСИТЬ</span><small>{pool - Math.min(pool, hunger)} обычных + {Math.min(pool, hunger)} голодных</small></button>
                 <div className="dice-tray">{dice.length ? dice.map((die, i) => <DiceFace die={die} key={`${i}-${die.value}`} />) : <p>Результат появится здесь</p>}</div>

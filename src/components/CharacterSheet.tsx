@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ATTRIBUTE_GROUPS,
   Character,
@@ -11,6 +12,7 @@ import {
 type Props = {
   character: Character;
   onChange: (character: Character) => void;
+  onPrepareRoll: (source: string, pool: number, hunger: number) => void;
 };
 
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -117,10 +119,13 @@ function DisciplineList({ entries, onChange }: { entries: DisciplineEntry[]; onC
   );
 }
 
-export function CharacterSheet({ character, onChange }: Props) {
+export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
+  const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const set = <K extends keyof Character>(key: K, value: Character[K]) => onChange({ ...character, [key]: value });
   const baseHealth = (character.attributes.Выносливость ?? 1) + 3;
   const baseWillpower = (character.attributes.Самообладание ?? 1) + (character.attributes.Решительность ?? 1);
+  const selectedPool = (selectedAttribute ? character.attributes[selectedAttribute] : 0) + (selectedSkill ? character.skills[selectedSkill] : 0);
   const setHealthMax = (max: number) => onChange({ ...character, healthMax: max, healthDamage: resizeDamage(character.healthDamage, max) });
   const setWillpowerMax = (max: number) => onChange({ ...character, willpowerMax: max, willpowerDamage: resizeDamage(character.willpowerDamage, max) });
 
@@ -149,7 +154,7 @@ export function CharacterSheet({ character, onChange }: Props) {
 
       <SectionTitle index="01" title="Атрибуты" hint="От 1 до 5" id="attributes" />
       <div className="attribute-grid">
-        {ATTRIBUTE_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><span>{attr}</span><Dots value={character.attributes[attr]} onChange={(value) => set("attributes", { ...character.attributes, [attr]: value })} /></div>)}</div>)}
+        {ATTRIBUTE_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><button type="button" className={`trait-select ${selectedAttribute === attr ? "selected" : ""}`} onClick={() => setSelectedAttribute(selectedAttribute === attr ? null : attr)}>{attr}</button><Dots value={character.attributes[attr]} onChange={(value) => set("attributes", { ...character.attributes, [attr]: value })} /></div>)}</div>)}
       </div>
 
       <SectionTitle index="02" title="Навыки" hint="Специализация даёт дополнительную кость" id="skills" />
@@ -159,7 +164,7 @@ export function CharacterSheet({ character, onChange }: Props) {
             <h4>{group}</h4>
             {skills.map((skill) => (
               <div className="skill-row" key={skill}>
-                <div className="stat"><span>{skill}</span><Dots value={character.skills[skill]} onChange={(value) => set("skills", { ...character.skills, [skill]: value })} /></div>
+                <div className="stat"><button type="button" className={`trait-select ${selectedSkill === skill ? "selected" : ""}`} onClick={() => setSelectedSkill(selectedSkill === skill ? null : skill)}>{skill}</button><Dots value={character.skills[skill]} onChange={(value) => set("skills", { ...character.skills, [skill]: value })} /></div>
                 <input aria-label={`Специализация: ${skill}`} placeholder="специализация" value={character.specialties[skill]} onChange={(event) => set("specialties", { ...character.specialties, [skill]: event.target.value })} />
               </div>
             ))}
@@ -219,6 +224,17 @@ export function CharacterSheet({ character, onChange }: Props) {
         <label><span>Потрачено</span><input type="number" min="0" value={character.experienceSpent} onChange={(event) => set("experienceSpent", Math.max(0, Number(event.target.value)))} /></label>
         <strong>Доступно: {Math.max(0, character.experienceTotal - character.experienceSpent)} XP</strong>
       </div>
+      {(selectedAttribute || selectedSkill) && (
+        <div className="sheet-roll-dock" role="region" aria-label="Подготовка броска">
+          <div className="roll-formula">
+            <small>Быстрый бросок</small>
+            <strong>{selectedAttribute ?? "атрибут"} <i>+</i> {selectedSkill ?? "навык"}</strong>
+          </div>
+          <div className="roll-pool"><span>Пул</span><b>{selectedAttribute && selectedSkill ? selectedPool : "—"}</b><small>Голод {character.hunger}</small></div>
+          <button type="button" className="clear-roll" onClick={() => { setSelectedAttribute(null); setSelectedSkill(null); }}>сбросить</button>
+          <button type="button" className="prepare-roll" disabled={!selectedAttribute || !selectedSkill} onClick={() => selectedAttribute && selectedSkill && onPrepareRoll(`${selectedAttribute} + ${selectedSkill}`, selectedPool, character.hunger)}>К броску →</button>
+        </div>
+      )}
     </div>
   );
 }
