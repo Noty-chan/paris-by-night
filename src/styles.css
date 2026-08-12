@@ -110,7 +110,7 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .source-link { color: #777a76; font: 8px monospace; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
 .source-link:hover { color: white; }
 
-.photo-collage { min-height: 700px; position: relative; display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 76px; gap: 12px; margin: 110px 25px 125px; isolation: isolate; }
+.photo-collage { min-height: 1520px; position: relative; display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 76px; gap: 12px; margin: 110px 25px 125px; isolation: isolate; }
 .photo-collage:before { content: "CONTACT / 2004"; position: absolute; left: -34px; top: 45%; color: #4b4e4b; font: 8px monospace; letter-spacing: .18em; transform: rotate(-90deg); }
 .photo-collage figure { position: relative; margin: 0; padding: 8px 8px 58px; overflow: hidden; border: 1px solid #393c40; background: #d5d0c6; box-shadow: 0 22px 55px rgba(0,0,0,.52); transform: rotate(-2.4deg); transition: transform .28s, z-index .01s; }
 .photo-collage figure:nth-child(even) { transform: rotate(2.8deg); }
@@ -120,6 +120,10 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .photo-collage figure:nth-child(4) { grid-column: 4 / 9; grid-row: 9 / 13; z-index: 5; }
 .photo-collage figure:nth-child(5) { grid-column: 8 / 13; grid-row: 9 / 13; z-index: 1; }
 .photo-collage figure:nth-child(6) { grid-column: 1 / 4; grid-row: 10 / 13; z-index: 6; padding-bottom: 48px; }
+.photo-collage figure:nth-child(7) { grid-column: 3 / 8; grid-row: 12 / 16; z-index: 4; }
+.photo-collage figure:nth-child(8) { grid-column: 7 / 12; grid-row: 14 / 18; z-index: 3; }
+.photo-collage figure:nth-child(9) { grid-column: 1 / 6; grid-row: 16 / 20; z-index: 5; }
+.photo-collage figure:nth-child(10) { grid-column: 6 / 13; grid-row: 18 / 22; z-index: 2; }
 .photo-collage figure:hover { z-index: 10; transform: rotate(0) scale(1.025); }
 .photo-collage img { width: 100%; height: 100%; display: block; object-fit: cover; filter: grayscale(.9) contrast(1.08) sepia(.08); }
 .photo-collage figure:hover img { filter: grayscale(.25) contrast(1.04); }
