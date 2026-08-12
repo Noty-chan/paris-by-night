@@ -2,14 +2,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Character, defaultCharacter, migrateCharacter } from "./data/character";
 import { CharacterSheet } from "./components/CharacterSheet";
 
-type Tab = "home" | "sheet" | "dice" | "templates";
+type Tab = "home" | "city" | "sheet" | "dice" | "templates";
 type Die = { value: number; hunger: boolean };
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
-  { id: "sheet", label: "Лист", index: "01" },
-  { id: "dice", label: "Броски", index: "02" },
-  { id: "templates", label: "Шаблоны", index: "03" },
+  { id: "city", label: "Город", index: "01" },
+  { id: "sheet", label: "Лист", index: "02" },
+  { id: "dice", label: "Броски", index: "03" },
+  { id: "templates", label: "Шаблоны", index: "04" },
+];
+
+const CITY_PHOTOS = [
+  { src: "./paris/bir-hakeim-2004.jpg", alt: "Мост Бир-Хакейм и высотки Фрон-де-Сен ночью", label: "Bir-Hakeim / 2004", note: "Мосты связывают берега. И делят владения.", href: "https://commons.wikimedia.org/wiki/File:Paris_Pont_de_Bir-Hakeim_and_Front-de-Seine_at_night_2004.jpg", credit: "Jgremillot · GFDL" },
+  { src: "./paris/rue-reaumur-2004.jpg", alt: "Пустая улица Реомюр в Париже ночью", label: "Rue Réaumur / 03:41", note: "После трёх часов город принадлежит тем, кому некуда возвращаться.", href: "https://commons.wikimedia.org/wiki/File:Rue_R%C3%A9aumur,_Paris_12_May_2004_N2.jpg", credit: "edwin.11 · CC BY 2.0" },
+  { src: "./paris/saint-lazare-entrance-2004.jpg", alt: "Вход на станцию метро Сен-Лазар в 2004 году", label: "Saint-Lazare / 01.2004", note: "Узел, где пассажир становится следом.", href: "https://commons.wikimedia.org/wiki/File:1513102_69801149d0_o_Paris_M%C3%A9tro_de_Paris_entree_station.jpg", credit: "rucativava · CC BY-SA 2.0" },
+  { src: "./paris/saint-lazare-platform-2004.jpg", alt: "Платформа линии 14 на станции Сен-Лазар в 2004 году", label: "Ligne 14 / 10.2004", note: "Новейшая линия уже прячет платформы за стеклом.", href: "https://commons.wikimedia.org/wiki/File:Paris_Metro_St_Lazare.jpg", credit: "FloSch · CC BY-SA 3.0 / GFDL" },
+  { src: "./paris/peripherique-2004.jpg", alt: "Автомобили и смог над автомагистралью A6a у Парижа", label: "A6a / 10.2004", note: "Кольцо кажется границей. Город давно перерос её.", href: "https://commons.wikimedia.org/wiki/File:Pollution_paris.jpg", credit: "Céréales Killer · CC BY-SA 3.0" },
+  { src: "./paris/street-network-2004.png", alt: "Схема радиальных средневековых и концентрических современных улиц Парижа", label: "Réseau / schéma", note: "Средневековые лучи внутри современного кольца.", href: "https://commons.wikimedia.org/wiki/File:Paris-reseau-rues.png", credit: "Thierry Bézecourt · CC BY-SA 2.5" },
 ];
 
 const TEMPLATES = [
@@ -59,6 +69,7 @@ export function App() {
   const [rouseResult, setRouseResult] = useState<number | null>(null);
   const [rouseApplied, setRouseApplied] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setSaved(false);
@@ -68,6 +79,10 @@ export function App() {
     }, 350);
     return () => clearTimeout(timer);
   }, [character]);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [tab]);
 
   const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
 
@@ -131,7 +146,7 @@ export function App() {
         <div className="side-note"><span>архив</span><strong>PAR–04</strong><p>Неофициальный помощник хроники. Доступ зарегистрирован.</p></div>
       </aside>
 
-      <main>
+      <main ref={mainRef}>
         {tab === "home" && (
           <section className="page home-page">
             <div className="eyebrow">Сводка ночи / dossier 001</div>
@@ -153,6 +168,51 @@ export function App() {
               <article><span className="card-code">СОСТОЯНИЕ</span><strong>Голод {character.hunger}</strong><p>Человечность {character.humanity} · Могущество крови {character.bloodPotency}</p><button onClick={() => setTab("dice")}>Перейти к броскам →</button></article>
               <article className="signal"><span className="card-code">ВХОДЯЩИЙ СИГНАЛ</span><strong>Источник не установлен</strong><p>«Не доверяй тому, кто первым назовёт цену»</p><small>получено 00:37</small></article>
             </div>
+            <button className="city-teaser" onClick={() => setTab("city")}><span>01 / ДОСЬЕ ГОРОДА</span><strong>2 161 932 живых. Около 120 признанных мёртвых.</strong><i>Войти в Париж →</i></button>
+          </section>
+        )}
+
+        {tab === "city" && (
+          <section className="page city-page">
+            <div className="city-head">
+              <div><div className="eyebrow">Полевое досье / Paris, 2004</div><h2>Город между<br /><em>двумя ударами сердца</em></h2></div>
+              <p>Париж выглядит законченным произведением. Это обман. За фасадами спорят двадцать округов, сотни коммун, государство, деньги и те, кто помнит улицы до электрического света.</p>
+            </div>
+
+            <div className="city-numbers" aria-label="Население Парижа и домена">
+              <article><small>в черте города</small><strong>2 161 932</strong><span>человека</span></article>
+              <article><small>агломерация</small><strong>≈ 10 млн</strong><span>человек</span></article>
+              <article className="kindred-number"><small>реестр домена</small><strong>≈ 120</strong><span>признанных Сородичей</span></article>
+              <p>Несколько десятков могут существовать вне реестра: гости, беглецы, тонкокровные и незаконные потомки. Точного числа не знает даже двор.</p>
+            </div>
+
+            <div className="city-copy city-copy--split">
+              <div><span className="chapter-no">01</span><h3>Не город, а три слоя</h3></div>
+              <div><p><b>Париж внутри périphérique</b> — престижное ядро: двадцать округов, двор, Элизиумы и старые владения. Но его два миллиона жителей — только часть организма.</p><p><b>Агломерация и Иль-де-Франс</b> — ещё десять миллионов людей, аэропорты, больницы, университеты, склады и места, где можно исчезнуть. Вампирская граница не обязана совпадать с муниципальной.</p></div>
+            </div>
+
+            <div className="photo-collage" aria-label="Париж 2004 года в фотографиях">
+              {CITY_PHOTOS.map((photo) => <figure key={photo.src}><img src={photo.src} alt={photo.alt} loading="lazy" /><figcaption><strong>{photo.label}</strong><span>{photo.note}</span><a href={photo.href} target="_blank" rel="noreferrer">{photo.credit} ↗</a></figcaption></figure>)}
+              <div className="collage-stamp">PARIS<br />OCT. 2004</div>
+            </div>
+
+            <div className="city-copy city-copy--split">
+              <div><span className="chapter-no">02</span><h3>Ночь меняет расстояния</h3></div>
+              <div><p>После полуночи сеть редеет. Метро и RER перестают быть надёжной связью, а Noctilien появится только в 2005 году. Машина, водитель, ночной автобус и безопасный маршрут — не удобства, а политические ресурсы.</p><p>Днём толпа скрывает хищника. Ночью повторяющийся почерк замечают больницы, полиция, камеры и газеты. Париж даёт много добычи, но почти не прощает привычек.</p><a className="source-link" href="https://www.apur.org/fr/economie-emploi/commerce/paris-nuit-etude-exploratoire" target="_blank" rel="noreferrer">APUR · исследование «Paris la nuit», 2004 ↗</a></div>
+            </div>
+
+            <section className="technology-card">
+              <div className="technology-title"><span>03 / TERMINAL</span><h3>Техника нулевых</h3><p>Информация уже цифровая. Но она ещё не мгновенная.</p></div>
+              <div className="technology-grid">
+                <article><small>GSM / 101,6%</small><h4>Телефон почти у каждого</h4><p>Звонки, SMS, редкие MMS. В Иль-де-Франсе SIM-карт уже больше, чем жителей, но мобильный оставляет биллинговый след.</p></article>
+                <article><small>WEB / 50%</small><h4>Интернет вошёл не ко всем</h4><p>ADSL, домашние компьютеры, форумы, блоги и интернет-кафе. Архивы ещё можно украсть на диске, а человека — отрезать от сети.</p></article>
+                <article><small>UMTS / ОЖИДАЕТСЯ</small><h4>3G ещё не наступил</h4><p>На дату досье коммерческий запуск только готовится. Мобильный интернет — это WAP и i-mode, а не постоянное видео из каждого кармана.</p></article>
+                <article><small>СЛЕД / ФРАГМЕНТАРНЫЙ</small><h4>Наблюдение требует людей</h4><p>Камеры, банковские операции, проездные и медицинские базы существуют, но плохо соединены. Расследование медленнее — и потому зависит от того, кто имеет доступ.</p></article>
+              </div>
+              <div className="technology-sources"><a href="https://www.arcep.fr/actualites/actualites-et-communiques/detail/n/huit-millions-de-clients-utilisent-les-services-multimedia-mobile.html" target="_blank" rel="noreferrer">ARCEP · мобильная связь, III квартал 2004 ↗</a><a href="https://en.arcep.fr/news/press-releases/view/n/the-uses-of-information-and-communication-technologies-in-france-2004.html" target="_blank" rel="noreferrer">ARCEP · цифровые технологии во Франции, 2004 ↗</a></div>
+            </section>
+
+            <div className="city-manifesto"><span>PARIS // NUIT</span><blockquote>Здесь власть измеряют не площадью территории. Её измеряют количеством дверей, которые откроются для тебя после закрытия метро.</blockquote><small>неофициальное правило домена</small></div>
           </section>
         )}
 
@@ -200,7 +260,7 @@ export function App() {
         )}
       </main>
       <footer>
-        <span className="build">PARIS // NUIT · BUILD 0.1</span>
+        <span className="build">PARIS // NUIT · BUILD 0.2</span>
         <a href="https://www.paradoxinteractive.com/games/world-of-darkness/community/dark-pack-agreement" target="_blank" rel="noreferrer"><img src="./dark-pack.webp" alt="Dark Pack" /></a>
         <span className="legal">NOT OFFICIAL WORLD OF DARKNESS MATERIAL · Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved.</span>
       </footer>
