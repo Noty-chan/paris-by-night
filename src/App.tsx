@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Character, defaultCharacter, migrateCharacter } from "./data/character";
 import { CharacterSheet } from "./components/CharacterSheet";
+import { CreationPage, RulesPage, SocietyPage } from "./components/ReferencePages";
 
-type Tab = "home" | "city" | "sheet" | "dice" | "templates";
+type Tab = "home" | "city" | "rules" | "creation" | "society" | "sheet" | "dice" | "templates";
 type Die = { value: number; hunger: boolean };
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
   { id: "city", label: "Город", index: "01" },
-  { id: "sheet", label: "Лист", index: "02" },
-  { id: "dice", label: "Броски", index: "03" },
-  { id: "templates", label: "Шаблоны", index: "04" },
+  { id: "rules", label: "Правила", index: "02" },
+  { id: "creation", label: "Создание", index: "03" },
+  { id: "society", label: "Общество", index: "04" },
+  { id: "sheet", label: "Лист", index: "05" },
+  { id: "dice", label: "Броски", index: "06" },
+  { id: "templates", label: "Шаблоны", index: "07" },
 ];
 
 const CITY_PHOTOS = [
@@ -216,6 +220,12 @@ export function App() {
           </section>
         )}
 
+        {tab === "rules" && <RulesPage />}
+
+        {tab === "creation" && <CreationPage onOpenSheet={() => setTab("sheet")} />}
+
+        {tab === "society" && <SocietyPage />}
+
         {tab === "sheet" && (
           <section className="page">
             <div className="page-head"><div><div className="eyebrow">Личное дело / локальная копия</div><h2>Лист персонажа</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
@@ -260,7 +270,7 @@ export function App() {
         )}
       </main>
       <footer>
-        <span className="build">PARIS // NUIT · BUILD 0.2</span>
+        <span className="build">PARIS // NUIT · BUILD 0.3</span>
         <a href="https://www.paradoxinteractive.com/games/world-of-darkness/community/dark-pack-agreement" target="_blank" rel="noreferrer"><img src="./dark-pack.webp" alt="Dark Pack" /></a>
         <span className="legal">NOT OFFICIAL WORLD OF DARKNESS MATERIAL · Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved.</span>
       </footer>

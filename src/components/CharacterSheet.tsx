@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
 import {
   ATTRIBUTE_GROUPS,
+  ADVANTAGE_NAMES,
+  CLAN_NAMES,
+  CLAN_PROFILES,
   Character,
   Damage,
   DISCIPLINE_NAMES,
   DisciplineEntry,
+  FLAW_NAMES,
+  GENERATIONS,
+  PREDATOR_TYPES,
+  RESONANCES,
+  SECT_NAMES,
   SKILL_GROUPS,
   TraitEntry,
 } from "../data/character";
@@ -43,11 +51,24 @@ function Dots({ value, max = 5, onChange }: { value: number; max?: number; onCha
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
   return (
     <label className="field">
-      <span>{label}</span>
+      <span>{label}{hint && <i className="field-help" title={hint}>?</i>}</span>
       <input value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function ChoiceField({ label, value, options, onChange, hint }: { label: string; value: string; options: readonly string[]; onChange: (v: string) => void; hint?: string }) {
+  const selectedValue = options.includes(value) ? value : value && options.includes("Другое / домашняя версия") ? "Другое / домашняя версия" : "";
+  return (
+    <label className="field choice-field">
+      <span>{label}{hint && <i className="field-help" title={hint}>?</i>}</span>
+      <select value={selectedValue} onChange={(event) => onChange(event.target.value)}>
+        <option value="">Выбрать…</option>
+        {options.map((option) => <option value={option} key={option}>{option}</option>)}
+      </select>
     </label>
   );
 }
@@ -61,10 +82,10 @@ function TextBox({ label, value, onChange, wide }: { label: string; value: strin
   );
 }
 
-function SectionTitle({ index, title, hint, id }: { index: string; title: string; hint?: string; id: string }) {
+function SectionTitle({ index, title, hint, id, status }: { index: string; title: string; hint?: string; id: string; status?: "ok" | "warn" }) {
   return (
     <div className="rule-title" id={id}>
-      <span>{index}</span><h3>{title}</h3>{hint && <small>{hint}</small>}
+      <span>{index}</span><h3>{title}</h3>{status && <b className={`section-status ${status}`}>{status === "ok" ? "готово" : "проверить"}</b>}{hint && <small>{hint}</small>}
     </div>
   );
 }
@@ -92,14 +113,14 @@ function resizeDamage(damage: Damage[], max: number): Damage[] {
   return Array.from({ length: max }, (_, index) => damage[index] ?? 0);
 }
 
-function TraitList({ title, entries, onChange }: { title: string; entries: TraitEntry[]; onChange: (entries: TraitEntry[]) => void }) {
+function TraitList({ title, entries, options, onChange }: { title: string; entries: TraitEntry[]; options: readonly string[]; onChange: (entries: TraitEntry[]) => void }) {
   const update = (id: string, patch: Partial<TraitEntry>) => onChange(entries.map((entry) => entry.id === id ? { ...entry, ...patch } : entry));
   return (
     <div className="trait-list">
       <div className="subhead"><h4>{title}</h4><button type="button" onClick={() => onChange([...entries, { id: uid("trait"), name: "", rating: 0, note: "" }])}>+ добавить</button></div>
       {entries.map((entry) => (
         <div className="trait-row" key={entry.id}>
-          <input aria-label={`${title}: название`} placeholder="Название" value={entry.name} onChange={(event) => update(entry.id, { name: event.target.value })} />
+          <select className="compact-select" aria-label={`${title}: название`} value={options.includes(entry.name) ? entry.name : entry.name ? "Другое" : ""} onChange={(event) => update(entry.id, { name: event.target.value })}><option value="">Выбрать…</option>{options.map((name) => <option value={name} key={name}>{name}</option>)}</select>
           <Dots value={entry.rating} onChange={(rating) => update(entry.id, { rating })} />
           <input aria-label={`${title}: уточнение`} placeholder="Уточнение или источник" value={entry.note} onChange={(event) => update(entry.id, { note: event.target.value })} />
           <button type="button" className="remove-row" onClick={() => onChange(entries.filter((item) => item.id !== entry.id))} aria-label="Удалить">×</button>
@@ -113,11 +134,10 @@ function DisciplineList({ entries, onChange }: { entries: DisciplineEntry[]; onC
   const update = (id: string, patch: Partial<DisciplineEntry>) => onChange(entries.map((entry) => entry.id === id ? { ...entry, ...patch } : entry));
   return (
     <div className="discipline-list">
-      <datalist id="discipline-names">{DISCIPLINE_NAMES.map((name) => <option value={name} key={name} />)}</datalist>
       {entries.map((entry) => (
         <div className="discipline-row" key={entry.id}>
           <div className="discipline-main">
-            <input list="discipline-names" aria-label="Название дисциплины" placeholder="Дисциплина" value={entry.name} onChange={(event) => update(entry.id, { name: event.target.value })} />
+            <select className="compact-select" aria-label="Название дисциплины" value={DISCIPLINE_NAMES.includes(entry.name) ? entry.name : ""} onChange={(event) => update(entry.id, { name: event.target.value })}><option value="">Выбрать дисциплину…</option>{DISCIPLINE_NAMES.map((name) => <option value={name} key={name}>{name}</option>)}</select>
             <Dots value={entry.rating} onChange={(rating) => update(entry.id, { rating })} />
             <button type="button" className="remove-row" onClick={() => onChange(entries.filter((item) => item.id !== entry.id))} aria-label="Удалить дисциплину">×</button>
           </div>
@@ -135,10 +155,42 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
   const [activeSection, setActiveSection] = useState("identity");
   const set = <K extends keyof Character>(key: K, value: Character[K]) => onChange({ ...character, [key]: value });
   const baseHealth = (character.attributes.Выносливость ?? 1) + 3;
-  const baseWillpower = (character.attributes.Самообладание ?? 1) + (character.attributes.Решительность ?? 1);
+  const baseWillpower = (character.attributes.Самообладание ?? 1) + (character.attributes.Упорство ?? 1);
   const selectedPool = (selectedAttribute ? character.attributes[selectedAttribute] : 0) + (selectedSkill ? character.skills[selectedSkill] : 0);
   const setHealthMax = (max: number) => onChange({ ...character, healthMax: max, healthDamage: resizeDamage(character.healthDamage, max) });
   const setWillpowerMax = (max: number) => onChange({ ...character, willpowerMax: max, willpowerDamage: resizeDamage(character.willpowerDamage, max) });
+  const clanProfile = CLAN_PROFILES.find((clan) => clan.name === character.clan);
+  const attributeCounts = [1, 2, 3, 4].map((rating) => Object.values(character.attributes).filter((value) => value === rating).length);
+  const attributesValid = attributeCounts.join("/") === "1/4/3/1";
+  const skillCounts = [1, 2, 3, 4].map((rating) => Object.values(character.skills).filter((value) => value === rating).length);
+  const skillPattern = skillCounts.join("/");
+  const skillsValid = ["3/3/3/1", "7/5/3/0", "10/8/1/0"].includes(skillPattern);
+  const disciplineTotal = character.disciplines.reduce((sum, item) => sum + item.rating, 0);
+  const expectedDisciplineTotal = character.predatorType ? 4 : 3;
+  const advantagesTotal = character.advantages.reduce((sum, item) => sum + item.rating, 0);
+  const flawsTotal = character.flaws.reduce((sum, item) => sum + item.rating, 0);
+  const identityValid = Boolean(character.name && character.name !== "Без имени" && character.concept && character.clan !== "Не определён" && character.predatorType);
+  const bloodValid = character.healthMax === baseHealth && character.willpowerMax === baseWillpower;
+  const humanityValid = Boolean(character.convictions.trim() && character.touchstones.trim());
+  const audit = [
+    { label: "Личность", ok: identityValid, text: identityValid ? "концепция, клан и охота выбраны" : "укажи имя, концепцию, клан и тип хищника" },
+    { label: "Атрибуты", ok: attributesValid, text: attributesValid ? "схема 4 / 3×3 / 4×2 / 1" : `сейчас уровни 1/2/3/4: ${attributeCounts.join(" / ")}; нужно 1 / 4 / 3 / 1` },
+    { label: "Навыки", ok: skillsValid, text: skillsValid ? "одна из стартовых схем соблюдена" : "выбери схему: специалист, баланс или мастер на все руки" },
+    { label: "Дисциплины", ok: disciplineTotal === expectedDisciplineTotal, text: `сейчас ${disciplineTotal}; ${character.predatorType ? "с типом хищника обычно нужно 4" : "до выбора типа хищника нужно 3"}` },
+    { label: "Преимущества", ok: advantagesTotal === 7 && flawsTotal >= 2, text: `${advantagesTotal}/7 достоинств · ${flawsTotal}/2+ недостатков` },
+    { label: "Производные", ok: bloodValid, text: bloodValid ? "здоровье и воля рассчитаны" : `здоровье ${baseHealth}, воля ${baseWillpower}: нажми «применить»` },
+    { label: "Человечность", ok: humanityValid, text: humanityValid ? "убеждения и опоры связаны" : "добавь хотя бы одно убеждение и связанную с ним опору" },
+  ];
+  const auditReady = audit.filter((item) => item.ok).length;
+
+  const applyClanFoundation = () => {
+    if (!clanProfile) return;
+    const existing = new Map(character.disciplines.map((entry) => [entry.name, entry]));
+    const clanDisciplines = clanProfile.disciplines.map((name, index) => existing.get(name) ?? { id: uid(`clan-${index}`), name, rating: 0, powers: "" });
+    const extraDisciplines = character.disciplines.filter((entry) => entry.name && !clanProfile.disciplines.includes(entry.name));
+    const disciplines = clanProfile.disciplines.length ? [...clanDisciplines, ...extraDisciplines] : character.disciplines;
+    onChange({ ...character, sect: clanProfile.usualSect, clanBane: clanProfile.bane, disciplines });
+  };
 
   useEffect(() => {
     const scrollRoot = document.querySelector("main");
@@ -195,29 +247,35 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
         <span className="sheet-key-hint"><kbd>←</kbd><kbd>→</kbd><b>разделы</b><kbd>1–8</kbd></span>
       </nav>
 
-      <SectionTitle index="00" title="Личность" hint="Кто ты этой ночью" id="identity" />
+      <details className={`sheet-audit ${auditReady === audit.length ? "complete" : ""}`} open={auditReady < 3}>
+        <summary><span>Проверка создания</span><strong>{auditReady}/{audit.length}</strong><small>{auditReady === audit.length ? "основа листа готова" : "это подсказки, не запреты"}</small></summary>
+        <div>{audit.map((item) => <p className={item.ok ? "ok" : "warn"} key={item.label}><i>{item.ok ? "✓" : "!"}</i><b>{item.label}</b><span>{item.text}</span></p>)}</div>
+      </details>
+
+      <SectionTitle index="00" title="Личность" hint="Кто ты этой ночью" id="identity" status={identityValid ? "ok" : "warn"} />
       <div className="sheet-id">
-        <Field label="Имя" value={character.name} onChange={(value) => set("name", value)} />
-        <Field label="Концепция" value={character.concept} onChange={(value) => set("concept", value)} />
+        <Field label="Имя" hint="Имя, которым персонажа знают в хронике." value={character.name} onChange={(value) => set("name", value)} />
+        <Field label="Концепция" hint="Короткая формула: кем был, чего хочет и чем опасен." value={character.concept} onChange={(value) => set("concept", value)} />
         <Field label="Игрок" value={character.player} onChange={(value) => set("player", value)} />
         <Field label="Хроника" value={character.chronicle} onChange={(value) => set("chronicle", value)} />
-        <Field label="Клан" value={character.clan} onChange={(value) => set("clan", value)} />
-        <Field label="Секта" value={character.sect} onChange={(value) => set("sect", value)} />
+        <ChoiceField label="Клан" hint="Кровное наследие: три Дисциплины, проклятие и принуждение." value={character.clan} options={CLAN_NAMES} onChange={(value) => set("clan", value)} />
+        <ChoiceField label="Секта" hint="Политическая принадлежность — это выбор, а не свойство клана." value={character.sect} options={SECT_NAMES} onChange={(value) => set("sect", value)} />
         <Field label="Сир" value={character.sire} onChange={(value) => set("sire", value)} />
-        <Field label="Поколение" value={character.generation} onChange={(value) => set("generation", value)} />
-        <Field label="Тип хищника" value={character.predatorType} onChange={(value) => set("predatorType", value)} />
+        <ChoiceField label="Поколение" hint="Обычный птенец или неонат — 12–13 поколение." value={character.generation} options={GENERATIONS} onChange={(value) => set("generation", value)} />
+        <ChoiceField label="Тип хищника" hint="Устойчивая привычка охоты; даёт специализацию, Дисциплину и особенности." value={character.predatorType} options={PREDATOR_TYPES} onChange={(value) => set("predatorType", value)} />
       </div>
+      {clanProfile && <div className="clan-helper"><div><small>Каноническая основа</small><strong>{clanProfile.name} · {clanProfile.epithet}</strong><p>{clanProfile.disciplines.join(" · ")}<br />Обычная принадлежность: {clanProfile.usualSect}</p></div><button type="button" onClick={applyClanFoundation}>Подставить основу</button><span>Заполнит названия Дисциплин, проклятие и обычную секту. Точки и парижские отклонения остаются за вами.</span></div>}
       <div className="sheet-text-grid identity-drives">
         <TextBox label="Амбиция" value={character.ambition} onChange={(value) => set("ambition", value)} />
         <TextBox label="Желание" value={character.desire} onChange={(value) => set("desire", value)} />
       </div>
 
-      <SectionTitle index="01" title="Атрибуты" hint="От 1 до 5" id="attributes" />
+      <SectionTitle index="01" title="Атрибуты" hint="1×4 · 3×3 · 4×2 · 1×1" id="attributes" status={attributesValid ? "ok" : "warn"} />
       <div className="attribute-grid">
         {ATTRIBUTE_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><button type="button" className={`trait-select ${selectedAttribute === attr ? "selected" : ""}`} onClick={() => setSelectedAttribute(selectedAttribute === attr ? null : attr)}>{attr}</button><Dots value={character.attributes[attr]} onChange={(value) => set("attributes", { ...character.attributes, [attr]: value })} /></div>)}</div>)}
       </div>
 
-      <SectionTitle index="02" title="Навыки" hint="Специализация даёт дополнительную кость" id="skills" />
+      <SectionTitle index="02" title="Навыки" hint="Выбери одну из трёх стартовых схем" id="skills" status={skillsValid ? "ok" : "warn"} />
       <div className="skill-columns">
         {SKILL_GROUPS.map(([group, skills]) => (
           <div className="skill-group" key={group}>
@@ -232,7 +290,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
         ))}
       </div>
 
-      <SectionTitle index="03" title="Кровь и состояние" hint="Зверь ведёт свой счёт" id="blood" />
+      <SectionTitle index="03" title="Кровь и состояние" hint="Зверь ведёт свой счёт" id="blood" status={bloodValid ? "ok" : "warn"} />
       <div className="blood-grid">
         <div className="blood-rating"><span>Голод</span><Dots value={character.hunger} onChange={(value) => set("hunger", value)} /></div>
         <div className="blood-rating"><span>Могущество крови</span><Dots value={character.bloodPotency} max={10} onChange={(value) => set("bloodPotency", value)} /></div>
@@ -245,26 +303,26 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
           <DamageTrack label="Здоровье" damage={character.healthDamage} onChange={(value) => set("healthDamage", value)} />
         </div>
         <div>
-          <div className="derived"><span>Воля: Самообладание + Решительность = {baseWillpower}</span><button type="button" onClick={() => setWillpowerMax(baseWillpower)}>применить</button><input type="number" min="1" max="15" value={character.willpowerMax} onChange={(event) => setWillpowerMax(Math.max(1, Math.min(15, Number(event.target.value))))} /></div>
+          <div className="derived"><span>Воля: Самообладание + Упорство = {baseWillpower}</span><button type="button" onClick={() => setWillpowerMax(baseWillpower)}>применить</button><input type="number" min="1" max="15" value={character.willpowerMax} onChange={(event) => setWillpowerMax(Math.max(1, Math.min(15, Number(event.target.value))))} /></div>
           <DamageTrack label="Воля" damage={character.willpowerDamage} onChange={(value) => set("willpowerDamage", value)} />
         </div>
       </div>
       <div className="sheet-text-grid blood-notes">
-        <TextBox label="Предпочтительный резонанс" value={character.resonance} onChange={(value) => set("resonance", value)} />
+        <ChoiceField label="Предпочтительный резонанс" value={character.resonance} options={RESONANCES} onChange={(value) => set("resonance", value)} hint="Эмоциональный вкус крови, который поддерживает развитие Дисциплин." />
         <TextBox label="Дискразия" value={character.dyscrasia} onChange={(value) => set("dyscrasia", value)} />
         <TextBox label="Клановое проклятие и тяжесть" value={character.clanBane} onChange={(value) => set("clanBane", value)} wide />
       </div>
 
-      <SectionTitle index="04" title="Дисциплины" hint="Силы, ритуалы и амальгамы" id="disciplines" />
+      <SectionTitle index="04" title="Дисциплины" hint="3 точки клана + 1 от типа хищника" id="disciplines" status={disciplineTotal === expectedDisciplineTotal ? "ok" : "warn"} />
       <DisciplineList entries={character.disciplines} onChange={(value) => set("disciplines", value)} />
 
-      <SectionTitle index="05" title="Преимущества" hint="Связи, ресурсы и осложнения" id="advantages" />
+      <SectionTitle index="05" title="Преимущества" hint="7 достоинств · минимум 2 недостатка" id="advantages" status={advantagesTotal === 7 && flawsTotal >= 2 ? "ok" : "warn"} />
       <div className="traits-grid">
-        <TraitList title="Преимущества и предания" entries={character.advantages} onChange={(value) => set("advantages", value)} />
-        <TraitList title="Недостатки" entries={character.flaws} onChange={(value) => set("flaws", value)} />
+        <TraitList title="Преимущества и предания" entries={character.advantages} options={ADVANTAGE_NAMES} onChange={(value) => set("advantages", value)} />
+        <TraitList title="Недостатки" entries={character.flaws} options={FLAW_NAMES} onChange={(value) => set("flaws", value)} />
       </div>
 
-      <SectionTitle index="06" title="Человечность и связи" hint="То, ради чего ещё стоит просыпаться" id="humanity" />
+      <SectionTitle index="06" title="Человечность и связи" hint="То, ради чего ещё стоит просыпаться" id="humanity" status={humanityValid ? "ok" : "warn"} />
       <div className="sheet-text-grid">
         <TextBox label="Убеждения" value={character.convictions} onChange={(value) => set("convictions", value)} />
         <TextBox label="Опоры" value={character.touchstones} onChange={(value) => set("touchstones", value)} />
