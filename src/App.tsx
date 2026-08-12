@@ -170,7 +170,7 @@ export function App() {
             <div className="summary-grid">
               <article><span className="card-code">DOSSIER ACTIF</span><strong>{character.name}</strong><p>{character.clan} · {character.concept}</p><button onClick={() => setTab("sheet")}>Продолжить заполнение →</button></article>
               <article><span className="card-code">СОСТОЯНИЕ</span><strong>Голод {character.hunger}</strong><p>Человечность {character.humanity} · Могущество крови {character.bloodPotency}</p><button onClick={() => setTab("dice")}>Перейти к броскам →</button></article>
-              <article className="signal"><span className="card-code">ВХОДЯЩИЙ СИГНАЛ</span><strong>Источник не установлен</strong><p>«Не доверяй тому, кто первым назовёт цену»</p><small>получено 00:37</small></article>
+              <article className="signal"><span className="card-code">ВХОДЯЩИЙ СИГНАЛ</span><strong>ПОМЕХИ // НЕТ ДАННЫХ</strong><p>▒▒▒▒▒ ░░▒▒ 01001110 // сигнал не распознан</p><small>канал занят · повторить позже</small></article>
             </div>
             <button className="city-teaser" onClick={() => setTab("city")}><span>01 / ДОСЬЕ ГОРОДА</span><strong>2 161 932 живых. Около 120 признанных мёртвых.</strong><i>Войти в Париж →</i></button>
           </section>
