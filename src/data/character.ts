@@ -1,6 +1,7 @@
 export type Damage = 0 | 1 | 2;
 export type TraitEntry = { id: string; name: string; rating: number; note: string };
 export type DisciplineEntry = { id: string; name: string; rating: number; powers: string };
+export type Wod5PdfState = { fields: Record<string, string> };
 
 export type ClanProfile = {
   name: string;
@@ -52,6 +53,7 @@ export type Character = {
   notes: string;
   experienceTotal: number;
   experienceSpent: number;
+  wod5Pdf: Wod5PdfState;
 };
 
 export const ATTRIBUTE_GROUPS = [
@@ -153,6 +155,7 @@ export const defaultCharacter: Character = {
   notes: "",
   experienceTotal: 0,
   experienceSpent: 0,
+  wod5Pdf: { fields: {} },
 };
 
 export function migrateCharacter(raw: Partial<Character>): Character {
@@ -200,5 +203,6 @@ export function migrateCharacter(raw: Partial<Character>): Character {
     disciplines: raw.disciplines ?? defaultCharacter.disciplines,
     advantages: raw.advantages ?? defaultCharacter.advantages,
     flaws: raw.flaws ?? defaultCharacter.flaws,
+    wod5Pdf: raw.wod5Pdf ?? defaultCharacter.wod5Pdf,
   };
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Character, defaultCharacter, migrateCharacter } from "./data/character";
 import { CharacterSheet } from "./components/CharacterSheet";
 import { CreationPage, DisciplinesPage, RulesPage, SocietyPage, StatsPage } from "./components/ReferencePages";
+import { importWod5Pdf } from "./lib/wod5PdfImport";
 
 type Tab = "home" | "city" | "rules" | "stats" | "disciplines" | "creation" | "society" | "sheet" | "dice" | "templates";
 type Die = { value: number; hunger: boolean };
@@ -79,6 +80,7 @@ export function App() {
   const [rouseResult, setRouseResult] = useState<number | null>(null);
   const [rouseApplied, setRouseApplied] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const wod5PdfImportRef = useRef<HTMLInputElement>(null);
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -136,6 +138,17 @@ export function App() {
     if (!file) return;
     try { setCharacter(migrateCharacter(JSON.parse(await file.text()))); }
     catch { window.alert("Не удалось прочитать лист. Нужен JSON, экспортированный с этого сайта."); }
+  };
+
+  const importWod5Sheet = async (file?: File) => {
+    if (!file) return;
+    try {
+      const result = await importWod5Pdf(file);
+      setCharacter((current) => migrateCharacter({ ...current, ...result.patch }));
+      window.alert(`Импортировано: ${result.imported.join(", ") || "совместимые данные"}.\n\n${result.warning}`);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Не удалось прочитать PDF WOD5.");
+    }
   };
 
   return (
@@ -239,7 +252,7 @@ export function App() {
         {tab === "sheet" && (
           <section className="page">
             <div className="page-head"><div><div className="eyebrow">Личное дело / локальная копия</div><h2>Лист персонажа</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
-            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт</button><input ref={importRef} type="file" accept="application/json" hidden onChange={(e) => importSheet(e.target.files?.[0])} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист?") && setCharacter(defaultCharacter)}>Сбросить</button></div>
+            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт JSON</button><button onClick={() => wod5PdfImportRef.current?.click()}>Импорт PDF WOD5</button><a className="external" href="https://wta5.ru/vampire/character-creator" target="_blank" rel="noreferrer">Создать на WOD5 ↗</a><input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => { void importSheet(event.target.files?.[0]); event.target.value = ""; }} /><input ref={wod5PdfImportRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { void importWod5Sheet(event.target.files?.[0]); event.target.value = ""; }} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист?") && setCharacter(defaultCharacter)}>Сбросить</button></div>
             <CharacterSheet character={character} onChange={setCharacter} onPrepareRoll={prepareRoll} />
           </section>
         )}

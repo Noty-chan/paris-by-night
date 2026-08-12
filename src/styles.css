@@ -157,7 +157,7 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .save-state { display: flex; align-items: center; gap: 8px; color: #686b67; font: 9px monospace; text-transform: uppercase; }
 .save-state i { background: #665b45; box-shadow: none; }
 .save-state i.ok { background: var(--green); box-shadow: 0 0 8px var(--green); }
-.sheet-toolbar { display: flex; gap: 7px; margin-bottom: 12px; }
+.sheet-toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
 .sheet-toolbar button { border: 1px solid #33363a; padding: 9px 13px; background: #111317; color: #8f908c; text-transform: uppercase; font: 9px monospace; cursor: pointer; }
 .sheet-toolbar button:hover { color: white; border-color: #666; }
 .sheet-toolbar .danger-link { margin-left: auto; color: #8c4d55; }
@@ -285,6 +285,24 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .experience-row label span { display: block; margin-bottom: 5px; color: #6c6f6b; font: 8px monospace; text-transform: uppercase; }
 .experience-row input { width: 100px; padding: 7px; color: #cac7bf; border: 1px solid #3c3f43; background: #0d0f11; }
 .experience-row strong { margin-left: auto; color: #b8b5ae; font: 500 15px Oswald; text-transform: uppercase; }
+.wod5-compat { margin-top: 16px; border: 1px solid #3a3d41; background: #101216; }
+.wod5-compat.empty { padding: 22px 26px; border-left: 2px solid #5c4a33; }
+.wod5-compat.empty strong { color: #b8b4ac; font: 500 15px Oswald; text-transform: uppercase; }
+.wod5-compat.empty p { max-width: 700px; margin: 8px 0 0; color: #70736f; font: 10px/1.65 Inter, sans-serif; }
+.wod5-compat summary { min-height: 59px; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; padding: 0 23px; cursor: pointer; list-style: none; }
+.wod5-compat summary::-webkit-details-marker { display: none; }
+.wod5-compat summary span { color: #b6b2aa; font: 500 15px Oswald; text-transform: uppercase; }
+.wod5-compat summary strong { color: var(--red-bright); font: 8px monospace; letter-spacing: .08em; text-transform: uppercase; }
+.wod5-compat summary small { color: #656864; font: 8px monospace; text-align: right; }
+.wod5-compat-body { padding: 22px; border-top: 1px solid #303338; }
+.wod5-compat-body > p { max-width: 780px; margin: 0 0 15px; color: #797b77; font: 10px/1.65 Inter, sans-serif; }
+.wod5-compat-body > input { width: 100%; max-width: 430px; padding: 10px 12px; border: 1px solid #36393d; background: #0b0c0f; color: #c8c5bd; outline: none; font: 10px monospace; }
+.wod5-compat-body > input:focus { border-color: var(--red-bright); }
+.wod5-field-grid { max-height: 480px; margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); overflow-y: auto; border-top: 1px solid #303338; border-left: 1px solid #303338; }
+.wod5-field-grid label { min-height: 62px; padding: 10px 12px; border-right: 1px solid #303338; border-bottom: 1px solid #303338; }
+.wod5-field-grid span { display: block; margin-bottom: 6px; color: #777a76; font: 8px monospace; }
+.wod5-field-grid input, .wod5-field-grid textarea { width: 100%; border: 0; border-bottom: 1px solid #3b3e42; background: transparent; color: #bcb9b1; outline: none; font: 9px monospace; }
+.wod5-field-grid textarea { min-height: 58px; resize: vertical; }
 .sheet-roll-dock { position: fixed; right: 28px; bottom: 68px; z-index: 12; width: min(720px, calc(100vw - 280px)); min-height: 74px; display: grid; grid-template-columns: minmax(210px, 1fr) 105px auto 142px; align-items: stretch; border: 1px solid #55585b; border-left: 3px solid var(--red); background: rgba(14,16,19,.97); box-shadow: 0 18px 55px rgba(0,0,0,.58); backdrop-filter: blur(12px); animation: dockIn .22s ease-out; }
 @keyframes dockIn { from { transform: translateY(14px); opacity: 0; } }
 .roll-formula { display: grid; align-content: center; gap: 7px; padding: 12px 20px; min-width: 0; }
@@ -594,6 +612,10 @@ footer .legal { text-align: right; }
   .sheet-audit p { grid-template-columns: 20px 78px 1fr; }
   .clan-helper { grid-template-columns: 1fr; }
   .clan-helper button { grid-column: auto; grid-row: auto; justify-self: start; }
+  .wod5-compat summary { grid-template-columns: 1fr auto; padding: 12px 16px; gap: 7px 12px; }
+  .wod5-compat summary small { grid-column: 1 / -1; text-align: left; }
+  .wod5-compat-body { padding: 16px; }
+  .wod5-field-grid { grid-template-columns: 1fr; }
   .city-teaser { grid-template-columns: 1fr auto; gap: 6px 14px; padding: 14px 16px; }
   .city-teaser strong { grid-column: 1 / -1; grid-row: 2; }
   .city-page { width: min(100% - 28px, 720px); }

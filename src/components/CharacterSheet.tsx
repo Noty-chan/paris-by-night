@@ -33,6 +33,7 @@ const SHEET_SECTIONS = [
   ["advantages", "05", "Преимущества"],
   ["humanity", "06", "Человечность"],
   ["story", "07", "История"],
+  ["wod5", "08", "PDF WOD5"],
 ] as const;
 
 function Dots({ value, max = 5, onChange }: { value: number; max?: number; onChange: (n: number) => void }) {
@@ -146,6 +147,18 @@ function DisciplineList({ entries, onChange }: { entries: DisciplineEntry[]; onC
       ))}
       <button type="button" className="add-row" onClick={() => onChange([...entries, { id: uid("discipline"), name: "", rating: 0, powers: "" }])}>+ добавить дисциплину</button>
     </div>
+  );
+}
+
+function Wod5Compatibility({ fields, onChange }: { fields: Record<string, string>; onChange: (fields: Record<string, string>) => void }) {
+  const [query, setQuery] = useState("");
+  const entries = Object.entries(fields).filter(([name]) => name.toLowerCase().includes(query.toLowerCase()));
+  if (!Object.keys(fields).length) return <div className="wod5-compat empty"><strong>PDF WOD5 ещё не импортирован</strong><p>Кнопка «Импорт PDF WOD5» наверху листа прочитает заполняемый PDF из конструктора и сохранит все его поля локально.</p></div>;
+  return (
+    <details className="wod5-compat">
+      <summary><span>Совместимые данные</span><strong>{Object.keys(fields).length} / 413 полей сохранены</strong><small>основные поля редактируются выше; здесь — полный архив PDF</small></summary>
+      <div className="wod5-compat-body"><p>Все значения из исходного PDF сохранены в листе, включая отдельные точки, клетки и поля, которых нет в удобной версии. Их можно найти и исправить здесь; для обычной игры пользуйся разделами листа выше.</p><input aria-label="Поиск поля PDF WOD5" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти поле: dot211, bane, features…" /><div className="wod5-field-grid">{entries.map(([name, value]) => <label key={name}><span>{name}</span>{value.includes("\n") || value.length > 90 ? <textarea value={value} onChange={(event) => onChange({ ...fields, [name]: event.target.value })} /> : <input value={value} onChange={(event) => onChange({ ...fields, [name]: event.target.value })} />}</label>)}</div></div>
+    </details>
   );
 }
 
@@ -342,6 +355,8 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
         <label><span>Потрачено</span><input type="number" min="0" value={character.experienceSpent} onChange={(event) => set("experienceSpent", Math.max(0, Number(event.target.value)))} /></label>
         <strong>Доступно: {Math.max(0, character.experienceTotal - character.experienceSpent)} XP</strong>
       </div>
+      <SectionTitle index="08" title="Совместимость PDF WOD5" hint="Все поля исходного PDF остаются в локальной копии" id="wod5" />
+      <Wod5Compatibility fields={character.wod5Pdf.fields} onChange={(fields) => set("wod5Pdf", { fields })} />
       {(selectedAttribute || selectedSkill) && (
         <div className="sheet-roll-dock" role="region" aria-label="Подготовка броска">
           <div className="roll-formula">
