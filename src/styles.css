@@ -502,6 +502,8 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .clan-grid > article > div:first-child { display: flex; justify-content: space-between; color: var(--red-bright); font: 8px monospace; text-transform: uppercase; }
 .clan-grid > article > div:first-child small { color: #626561; }
 .clan-grid h4 { margin: 42px 0 7px; color: #cfcbc3; font: 500 25px Oswald; text-transform: uppercase; }
+.clan-grid h4 a { color: inherit; text-decoration: none; }
+.clan-grid h4 a:hover { color: var(--red-bright); }
 .clan-grid > article > p { min-height: 34px; margin: 0 0 22px; color: #71736f; font: italic 12px Georgia, serif; }
 .clan-grid dl { margin: 0; }
 .clan-grid dt { margin-top: 13px; color: #656864; font: 7px monospace; text-transform: uppercase; }
