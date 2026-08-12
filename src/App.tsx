@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Character, defaultCharacter, migrateCharacter } from "./data/character";
 import { CharacterSheet } from "./components/CharacterSheet";
-import { CreationPage, RulesPage, SocietyPage } from "./components/ReferencePages";
+import { CreationPage, DisciplinesPage, RulesPage, SocietyPage, StatsPage } from "./components/ReferencePages";
 
-type Tab = "home" | "city" | "rules" | "creation" | "society" | "sheet" | "dice" | "templates";
+type Tab = "home" | "city" | "rules" | "stats" | "disciplines" | "creation" | "society" | "sheet" | "dice" | "templates";
 type Die = { value: number; hunger: boolean };
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
   { id: "city", label: "Город", index: "01" },
   { id: "rules", label: "Правила", index: "02" },
-  { id: "creation", label: "Создание", index: "03" },
-  { id: "society", label: "Общество", index: "04" },
-  { id: "sheet", label: "Лист", index: "05" },
-  { id: "dice", label: "Броски", index: "06" },
-  { id: "templates", label: "Шаблоны", index: "07" },
+  { id: "stats", label: "Параметры", index: "03" },
+  { id: "disciplines", label: "Дисциплины", index: "04" },
+  { id: "creation", label: "Создание", index: "05" },
+  { id: "society", label: "Общество", index: "06" },
+  { id: "sheet", label: "Лист", index: "07" },
+  { id: "dice", label: "Броски", index: "08" },
+  { id: "templates", label: "Шаблоны", index: "09" },
 ];
 
 const CITY_PHOTOS = [
@@ -206,7 +208,7 @@ export function App() {
 
             <div className="city-copy city-copy--split">
               <div><span className="chapter-no">02</span><h3>Ночь меняет расстояния</h3></div>
-              <div><p>После полуночи сеть редеет. Метро и RER перестают быть надёжной связью, а Noctilien появится только в 2005 году. Машина, водитель, ночной автобус и безопасный маршрут — не удобства, а политические ресурсы.</p><p>Днём толпа скрывает хищника. Ночью повторяющийся почерк замечают больницы, полиция, камеры и газеты. Париж даёт много добычи, но почти не прощает привычек.</p><a className="source-link" href="https://www.apur.org/fr/economie-emploi/commerce/paris-nuit-etude-exploratoire" target="_blank" rel="noreferrer">APUR · исследование «Paris la nuit», 2004 ↗</a></div>
+              <div><p>После полуночи сеть редеет. Метро и RER перестают быть надёжной связью, а Noctilien появится только в 2005 году. Машина, водитель, ночной автобус и безопасный маршрут — не удобства, а необходимость.</p><p>Днём толпа скрывает хищника. Ночью повторяющийся почерк замечают больницы, полиция, камеры и газеты. Париж даёт много добычи, но почти не прощает привычек.</p><a className="source-link" href="https://www.apur.org/fr/economie-emploi/commerce/paris-nuit-etude-exploratoire" target="_blank" rel="noreferrer">APUR · исследование «Paris la nuit», 2004 ↗</a></div>
             </div>
 
             <section className="technology-card">
@@ -220,11 +222,15 @@ export function App() {
               <div className="technology-sources"><a href="https://www.arcep.fr/actualites/actualites-et-communiques/detail/n/huit-millions-de-clients-utilisent-les-services-multimedia-mobile.html" target="_blank" rel="noreferrer">ARCEP · мобильная связь, III квартал 2004 ↗</a><a href="https://en.arcep.fr/news/press-releases/view/n/the-uses-of-information-and-communication-technologies-in-france-2004.html" target="_blank" rel="noreferrer">ARCEP · цифровые технологии во Франции, 2004 ↗</a></div>
             </section>
 
-            <div className="city-manifesto"><span>PARIS // NUIT</span><blockquote>Здесь власть измеряют не площадью территории. Её измеряют количеством дверей, которые откроются для тебя после закрытия метро.</blockquote><small>неофициальное правило домена</small></div>
+            <div className="city-manifesto"><span>PARIS // NUIT</span><blockquote>Власть здесь измеряют не площадью домена. Её определяют двери, которые ты способен открыть, и люди, готовые назвать тебя своим.</blockquote><small>неофициальное правило домена</small></div>
           </section>
         )}
 
         {tab === "rules" && <RulesPage />}
+
+        {tab === "stats" && <StatsPage />}
+
+        {tab === "disciplines" && <DisciplinesPage />}
 
         {tab === "creation" && <CreationPage onOpenSheet={() => setTab("sheet")} />}
 

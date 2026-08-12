@@ -381,6 +381,41 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .hunger-scale i { height: 44px; display: grid; place-items: center; border: 1px solid #414448; color: #676a66; font: normal 14px Oswald; }
 .hunger-scale i.filled { border-color: #83313d; color: #ddd9d1; background: linear-gradient(135deg, rgba(166,32,49,.42), rgba(166,32,49,.08)); }
 .hunger-reference > small { color: #626561; font: 8px/1.5 monospace; }
+.hunger-guide { margin: 16px 0 70px; border: 1px solid #403238; background: linear-gradient(135deg, rgba(166,32,49,.09), rgba(16,18,22,.9) 40%); }
+.hunger-guide > .panel-heading { padding: 23px 27px; }
+.hunger-steps { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #3b3035; }
+.hunger-steps article { min-height: 170px; display: grid; grid-template-columns: 32px 1fr; gap: 13px; padding: 22px 19px; border-right: 1px solid #393035; }
+.hunger-steps article:last-child { border-right: 0; }
+.hunger-steps b { color: var(--red-bright); font: 10px monospace; }
+.hunger-steps strong { color: #c9c6bf; font: 500 16px Oswald; text-transform: uppercase; }
+.hunger-steps p, .hunger-outcomes p { margin: 8px 0 0; color: #858681; font: 10px/1.65 Inter, sans-serif; }
+.hunger-outcomes { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #3b3035; }
+.hunger-outcomes article { padding: 20px 23px; border-right: 1px solid #393035; }
+.hunger-outcomes article:last-child { border-right: 0; }
+.hunger-outcomes span { color: #c15a67; font: 8px monospace; letter-spacing: .1em; }
+.handbook-section { margin: 16px 0 70px; border: 1px solid #34373b; background: #101216; }
+.handbook-section > .panel-heading { padding: 23px 27px; }
+.attribute-handbook > section, .skill-handbook > section { border-top: 1px solid #303338; }
+.attribute-handbook h4, .skill-handbook h4 { margin: 0; padding: 15px 22px; color: var(--red-bright); font: 500 13px Oswald; letter-spacing: .09em; text-transform: uppercase; }
+.attribute-handbook > section > div { display: grid; grid-template-columns: repeat(3, 1fr); }
+.attribute-handbook article, .skill-handbook-grid article { min-height: 105px; padding: 18px 21px; border-right: 1px solid #303338; border-top: 1px solid #303338; }
+.attribute-handbook article:last-child { border-right: 0; }
+.attribute-handbook strong, .skill-handbook-grid strong { color: #c8c5bd; font: 500 16px Oswald; text-transform: uppercase; }
+.attribute-handbook p, .skill-handbook-grid p, .handbook-intro { margin: 7px 0 0; color: #767974; font: 10px/1.6 Inter, sans-serif; }
+.handbook-intro { margin: 0; padding: 0 27px 20px; }
+.skill-handbook-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+.skill-handbook-grid article:nth-child(3n) { border-right: 0; }
+.discipline-guide { min-height: 90px; margin-bottom: 16px; padding: 21px 26px; display: grid; grid-template-columns: 185px 1fr; gap: 24px; align-items: center; border: 1px solid #4e3339; border-left: 3px solid var(--red); background: rgba(166,32,49,.06); }
+.discipline-guide span { color: var(--red-bright); font: 500 15px Oswald; letter-spacing: .08em; }
+.discipline-guide p { margin: 0; color: #858681; font: 10px/1.65 Inter, sans-serif; }
+.discipline-handbook { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #34373b; border-left: 1px solid #34373b; }
+.discipline-handbook article { min-height: 235px; padding: 23px; display: flex; flex-direction: column; border-right: 1px solid #34373b; border-bottom: 1px solid #34373b; background: #101216; }
+.discipline-handbook article > div { display: flex; justify-content: space-between; color: var(--red-bright); font: 8px monospace; }
+.discipline-handbook article small { color: #666965; text-transform: uppercase; }
+.discipline-handbook h3 { margin: 38px 0 8px; color: #cfcbc3; font: 500 24px Oswald; text-transform: uppercase; }
+.discipline-handbook p { margin: 0; color: #767974; font: 10px/1.65 Inter, sans-serif; }
+.discipline-handbook a { margin-top: auto; padding-top: 16px; color: #8e6a70; font: 8px monospace; text-decoration: none; text-transform: uppercase; }
+.discipline-handbook a:hover { color: #e1a0aa; }
 .pool-table { margin: 16px 0; border: 1px solid #34373b; background: #0f1114; }
 .pool-table .panel-heading { padding: 22px 27px; }
 .pool-table > div:not(.panel-heading) { display: grid; grid-template-columns: 1fr 1fr; padding: 13px 27px; border-bottom: 1px solid #292c30; }
@@ -506,6 +541,11 @@ footer .legal { text-align: right; }
   .reference-hero { grid-template-columns: 1fr; gap: 28px; }
   .reference-hero > p { max-width: 680px; }
   .quick-rule-grid, .clan-grid { grid-template-columns: repeat(2, 1fr); }
+  .hunger-steps { grid-template-columns: repeat(2, 1fr); }
+  .hunger-steps article:nth-child(2) { border-right: 0; }
+  .hunger-outcomes, .attribute-handbook > section > div, .skill-handbook-grid, .discipline-handbook { grid-template-columns: repeat(2, 1fr); }
+  .attribute-handbook article:nth-child(2), .skill-handbook-grid article:nth-child(2n) { border-right: 0; }
+  .skill-handbook-grid article:nth-child(3n) { border-right: 1px solid #303338; }
   .predator-reference > div:last-child, .court-reference > div:last-child { grid-template-columns: repeat(2, 1fr); }
   .clan-catalogue-head { align-items: flex-start; flex-direction: column; }
   .clan-filters { justify-content: flex-start; }
@@ -592,6 +632,18 @@ footer .legal { text-align: right; }
   .quick-rule-grid h3 { margin-top: 25px; }
   .reference-panel { min-height: 0; padding: 22px; }
   .reference-split { margin-top: 45px; }
+  .hunger-guide { margin-bottom: 45px; }
+  .hunger-steps, .hunger-outcomes, .attribute-handbook > section > div, .skill-handbook-grid, .discipline-handbook { grid-template-columns: 1fr; }
+  .hunger-steps article, .hunger-outcomes article, .attribute-handbook article, .skill-handbook-grid article, .discipline-handbook article { min-height: 0; border-right: 0; }
+  .hunger-steps article { padding: 18px; }
+  .hunger-outcomes article { padding: 18px; }
+  .handbook-section { margin-bottom: 45px; }
+  .handbook-section > .panel-heading { padding: 20px 18px; }
+  .attribute-handbook h4, .skill-handbook h4 { padding: 14px 18px; }
+  .attribute-handbook article, .skill-handbook-grid article { padding: 16px 18px; }
+  .handbook-intro { padding: 0 18px 18px; }
+  .discipline-guide { grid-template-columns: 1fr; gap: 9px; padding: 19px; }
+  .discipline-handbook article { min-height: 205px; padding: 20px; }
   .pool-table .panel-heading, .pool-table > div:not(.panel-heading) { padding-left: 18px; padding-right: 18px; }
   .pool-table > div:not(.panel-heading) { grid-template-columns: 1fr; gap: 5px; }
   .panel-heading > small { display: none; }
