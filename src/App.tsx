@@ -50,7 +50,7 @@ function loadCharacter(): Character {
 }
 
 function DiceGlyph({ kind }: { kind: "failure" | "success" | "critical" | "beast" }) {
-  if (kind === "failure") return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="m18 18-7-7m19 7 7-7M18 30l-7 7m19-7 7 7" /><path d="M15 24h-5m28 0h-5" /></svg>;
+  if (kind === "failure") return <svg viewBox="0 0 48 48" aria-hidden="true" />;
   if (kind === "success") return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="m24 8 16 16-16 16L8 24Z" /><circle cx="24" cy="24" r="4" /></svg>;
   if (kind === "critical") return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="m17 7 12 17-12 17L5 24Z" /><path d="m31 7 12 17-12 17-12-17Z" /></svg>;
   return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 12c4 3 7 7 8 12l-6 13M24 9c2 5 2 10 0 15l-1 15M37 12c-4 3-7 7-8 12l6 13" /><path d="m9 34 4 3 5-1m21-2-4 3-5-1" /></svg>;
