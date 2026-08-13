@@ -49,8 +49,17 @@ function loadCharacter(): Character {
   }
 }
 
+function DiceGlyph({ kind }: { kind: "failure" | "success" | "critical" | "beast" }) {
+  if (kind === "failure") return <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="12" /><path d="M15.5 32.5 32.5 15.5" /></svg>;
+  if (kind === "success") return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="m24 8 16 16-16 16L8 24Z" /><circle cx="24" cy="24" r="4" /></svg>;
+  if (kind === "critical") return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="m17 7 12 17-12 17L5 24Z" /><path d="m31 7 12 17-12 17-12-17Z" /></svg>;
+  return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 12c4 3 7 7 8 12l-6 13M24 9c2 5 2 10 0 15l-1 15M37 12c-4 3-7 7-8 12l6 13" /><path d="m9 34 4 3 5-1m21-2-4 3-5-1" /></svg>;
+}
+
 function DiceFace({ die }: { die: Die }) {
-  return <div className={`die ${die.hunger ? "hunger" : ""}`}><span>{die.value}</span><small>{die.hunger ? "голод" : "d10"}</small></div>;
+  const kind = die.hunger && die.value === 1 ? "beast" : die.value === 10 ? "critical" : die.value >= 6 ? "success" : "failure";
+  const label = kind === "beast" ? "Знак Зверя" : kind === "critical" ? "Крит" : kind === "success" ? "Успех" : "Провал";
+  return <div className={`die ${die.hunger ? "hunger" : "regular"} ${kind}`} role="img" aria-label={`${die.hunger ? "Кость Голода" : "Обычная кость"}: ${label}, выпало ${die.value}`} title={`${label} · ${die.value}`}><DiceGlyph kind={kind} /><small>{label}</small></div>;
 }
 
 function interpretDice(dice: Die[], difficulty: number) {
@@ -277,7 +286,7 @@ export function App() {
                   <button type="button" onClick={rollRouse}>Бросить одну кость</button>
                   {rouseResult !== null && rouseResult < 6 && character.hunger < 5 && <button type="button" className="apply-hunger" disabled={rouseApplied} onClick={applyRouseHunger}>{rouseApplied ? "Голод применён" : `Применить: Голод ${character.hunger} → ${character.hunger + 1}`}</button>}
                 </div>
-                <h3>Читаем кости</h3><dl><div><dt>6–9</dt><dd>один успех</dd></div><div><dt>10 + 10</dt><dd>крит: четыре успеха</dd></div><div><dt>10 голода</dt><dd>может сделать крит грязным</dd></div><div><dt>1 голода</dt><dd>может сделать провал звериным</dd></div></dl><div className="rule-note">Кости Голода заменяют обычные кости в пуле, но не добавляются к нему.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a>
+                <h3>Читаем кости</h3><dl className="dice-key"><div><dt><span className="key-glyph failure"><DiceGlyph kind="failure" /></span>Провал</dt><dd>1–5 не дают успехов</dd></div><div><dt><span className="key-glyph success"><DiceGlyph kind="success" /></span>Успех</dt><dd>6–9 дают один успех</dd></div><div><dt><span className="key-glyph critical"><DiceGlyph kind="critical" /></span>Крит</dt><dd>каждая пара десяток считается четырьмя успехами</dd></div><div><dt><span className="key-glyph beast"><DiceGlyph kind="beast" /></span>Зверь</dt><dd>только красная 1 и только при общем провале</dd></div></dl><div className="rule-note">Красная критическая грань делает крит грязным, только если её десятка вошла в критическую пару. Кости Голода заменяют обычные кости, но не добавляются к пулу.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a>
               </aside>
             </div>
           </section>

@@ -332,11 +332,16 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .roll-button small { font: 8px monospace; opacity: .7; }
 .dice-tray { min-height: 220px; display: flex; align-content: center; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 34px 10px; border-bottom: 1px solid var(--line); }
 .dice-tray > p { align-self: center; color: #50534f; font: 10px monospace; text-transform: uppercase; }
-.die { width: 58px; height: 58px; display: grid; place-content: center; position: relative; border: 1px solid #666a6d; background: #d3d0c8; color: #191a1c; clip-path: polygon(14% 0, 86% 0, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0 86%, 0 14%); animation: diceIn .28s ease-out both; }
+.die { width: 66px; height: 66px; display: grid; grid-template-rows: 1fr auto; place-items: center; position: relative; padding: 8px 7px 7px; border: 1px solid #777b7e; background: linear-gradient(145deg, #dedbd2, #aaa8a2); color: #17191c; clip-path: polygon(14% 0, 86% 0, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0 86%, 0 14%); filter: drop-shadow(0 7px 8px rgba(0,0,0,.35)); animation: diceIn .28s ease-out both; }
 @keyframes diceIn { from { transform: rotate(35deg) scale(.4); opacity: 0; } }
-.die span { font: 600 23px Oswald; text-align: center; }
-.die small { font: 7px monospace; text-transform: uppercase; text-align: center; }
-.die.hunger { background: var(--red); color: white; border-color: var(--red-bright); }
+.die svg { width: 38px; height: 38px; align-self: end; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.die.success svg circle { fill: currentColor; stroke: none; }
+.die.critical svg { width: 41px; }
+.die small { align-self: end; font: 6px monospace; letter-spacing: .08em; text-transform: uppercase; text-align: center; }
+.die.hunger { border-color: #e05262; background: linear-gradient(145deg, #bd263a, #64121e); color: #fff4ed; box-shadow: inset 0 0 18px rgba(35,0,4,.42); }
+.die.hunger.critical { background: linear-gradient(145deg, #e03c50, #7d101f); }
+.die.hunger.beast { background: linear-gradient(145deg, #8d1726, #30070d); color: #ffe2d8; }
+.die.beast svg { stroke-width: 3.4; filter: drop-shadow(0 0 5px rgba(255,181,166,.35)); }
 .result { padding-top: 22px; }
 .result small { color: #626460; font: 8px monospace; text-transform: uppercase; }
 .result strong { display: block; color: #b75662; font: 500 24px Oswald; margin: 7px 0; }
@@ -357,6 +362,12 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .quick-rules dl div { display: grid; grid-template-columns: 72px 1fr; gap: 10px; padding: 15px 0; border-bottom: 1px solid var(--line); }
 .quick-rules dt { color: var(--red-bright); font: 500 13px Oswald; }
 .quick-rules dd { margin: 0; color: #81837f; font-size: 10px; line-height: 1.5; }
+.dice-key dt { display: flex; align-items: center; gap: 9px; }
+.key-glyph { width: 25px; height: 25px; display: inline-grid; place-items: center; border: 1px solid #55585b; color: #bbb8b1; background: #d0cdc5; }
+.key-glyph svg { width: 19px; height: 19px; fill: none; stroke: #181a1d; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.key-glyph.success svg circle { fill: #181a1d; stroke: none; }
+.key-glyph.beast { border-color: #7d2834; background: #65111d; }
+.key-glyph.beast svg { stroke: #ffe2d8; }
 .rule-note { margin: 25px 0; border-left: 2px solid var(--red); background: rgba(166,32,49,.08); padding: 14px; color: #8d8c87; font: 10px/1.6 monospace; }
 
 .muted { color: #666863; font: 9px monospace; text-transform: uppercase; }
