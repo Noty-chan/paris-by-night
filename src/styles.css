@@ -330,10 +330,13 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .roll-button:hover { background: var(--red-bright); }
 .roll-button span { font: 500 18px Oswald; letter-spacing: .2em; }
 .roll-button small { font: 8px monospace; opacity: .7; }
-.dice-tray { min-height: 220px; display: flex; align-content: center; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 34px 10px; border-bottom: 1px solid var(--line); }
+.dice-tray { min-height: 220px; display: flex; align-content: center; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 34px 10px; position: relative; border-bottom: 1px solid var(--line); }
+.dice-tray.rolling { animation: trayKick .34s ease-out both; }
 .dice-tray > p { align-self: center; color: #50534f; font: 10px monospace; text-transform: uppercase; }
-.die { width: 66px; height: 66px; display: grid; grid-template-rows: 1fr auto; place-items: center; position: relative; padding: 8px 7px 7px; border: 1px solid #777b7e; background: linear-gradient(145deg, #dedbd2, #aaa8a2); color: #17191c; clip-path: polygon(14% 0, 86% 0, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0 86%, 0 14%); filter: drop-shadow(0 7px 8px rgba(0,0,0,.35)); animation: diceIn .28s ease-out both; }
-@keyframes diceIn { from { transform: rotate(35deg) scale(.4); opacity: 0; } }
+.die-stage { animation: diceIn .5s cubic-bezier(.2,.78,.24,1.18) both; }
+.die { width: 66px; height: 66px; display: grid; grid-template-rows: 1fr auto; place-items: center; position: relative; padding: 8px 7px 7px; border: 1px solid #777b7e; background: linear-gradient(145deg, #dedbd2, #aaa8a2); color: #17191c; clip-path: polygon(14% 0, 86% 0, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0 86%, 0 14%); filter: drop-shadow(0 7px 8px rgba(0,0,0,.35)); }
+@keyframes diceIn { 0% { transform: translateY(-22px) rotate(-42deg) scale(.58); opacity: 0; } 52% { transform: translateY(6px) rotate(9deg) scale(1.04); opacity: 1; } 76% { transform: translateY(-3px) rotate(-3deg) scale(.98); } 100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; } }
+@keyframes trayKick { 0%, 100% { background: transparent; } 42% { background: rgba(166,32,49,.055); box-shadow: inset 0 0 34px rgba(166,32,49,.06); } }
 .die svg { width: 38px; height: 38px; align-self: end; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .die.success svg circle { fill: currentColor; stroke: none; }
 .die.critical svg { width: 41px; }
@@ -342,7 +345,8 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .die.hunger.critical { background: linear-gradient(145deg, #e03c50, #7d101f); }
 .die.hunger.beast { background: linear-gradient(145deg, #8d1726, #30070d); color: #ffe2d8; }
 .die.beast svg { stroke-width: 3.4; filter: drop-shadow(0 0 5px rgba(255,181,166,.35)); }
-.result { padding-top: 22px; }
+.result { padding-top: 22px; animation: resultReveal .32s .18s ease-out both; }
+@keyframes resultReveal { from { opacity: .25; transform: translateY(5px); } }
 .result small { color: #626460; font: 8px monospace; text-transform: uppercase; }
 .result strong { display: block; color: #b75662; font: 500 24px Oswald; margin: 7px 0; }
 .result.success strong { color: #b7b5ae; }
@@ -528,6 +532,163 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .society-principles dt { color: #b2afa8; font: 500 14px Oswald; text-transform: uppercase; }
 .society-principles dd { margin: 5px 0 0; color: #696c68; font: 8px/1.55 monospace; }
 
+/* Consolidated reference hub */
+.reference-hub { width: 100%; margin: 0 auto; }
+.reference-hub-content { min-width: 0; }
+.reference-hub-content > .page { width: min(1180px, calc(100% - 72px)); }
+.reference-hub-nav { width: 270px; max-height: calc(100dvh - 150px); position: fixed; right: 22px; top: 102px; z-index: 14; border: 1px solid #3c3f43; background: rgba(13,15,18,.97); box-shadow: 0 20px 55px rgba(0,0,0,.48); transition: width .24s ease, transform .24s ease, top .24s ease; }
+.reference-hub-toggle { width: 38px; min-height: 42px; position: absolute; right: 0; top: 0; display: grid; place-items: center; padding: 0; border: 0; border-left: 1px solid #3c3f43; border-bottom: 1px solid #3c3f43; background: rgba(20,22,26,.98); color: #777a76; cursor: pointer; z-index: 2; }
+.reference-hub-toggle span { display: none; }
+.reference-hub-toggle i { color: var(--red-bright); font: normal 21px Georgia, serif; }
+.reference-hub-toggle:hover { color: white; background: #17191d; }
+.reference-hub-nav.collapsed { width: 42px; top: 132px; border-color: #60303a; box-shadow: 0 14px 34px rgba(0,0,0,.4); }
+.reference-hub-nav.collapsed .reference-hub-toggle { width: 100%; min-height: 164px; position: static; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 13px 0; border: 0; background: repeating-linear-gradient(135deg, rgba(166,32,49,.11) 0, rgba(166,32,49,.11) 2px, transparent 2px, transparent 9px); }
+.reference-hub-nav.collapsed .reference-hub-toggle span { display: block; color: #aaa7a0; font: 500 9px Oswald; letter-spacing: .12em; writing-mode: vertical-rl; transform: rotate(180deg); }
+.reference-hub-nav.collapsed .reference-hub-toggle i { transform: rotate(180deg); }
+.reference-hub-nav.collapsed header, .reference-hub-nav.collapsed nav, .reference-hub-nav.collapsed > a { display: none; }
+.reference-hub-nav header { padding: 22px 52px 22px 20px; border-bottom: 1px solid #303338; background: repeating-linear-gradient(135deg, rgba(166,32,49,.045) 0, rgba(166,32,49,.045) 2px, transparent 2px, transparent 10px); }
+.reference-hub-nav header > span { color: var(--red-bright); font: 7px monospace; letter-spacing: .12em; }
+.reference-hub-nav header strong { display: block; margin: 12px 0 8px; color: #ccc8c0; font: 500 20px Oswald; letter-spacing: .04em; text-transform: uppercase; }
+.reference-hub-nav header p { margin: 0; color: #626561; font: 8px/1.55 monospace; }
+.reference-hub-nav nav { display: grid; }
+.reference-hub-nav nav button { min-height: 68px; display: grid; grid-template-columns: 28px 1fr; gap: 9px; align-items: center; padding: 11px 15px; border: 0; border-bottom: 1px solid #2d3034; border-left: 2px solid transparent; background: transparent; color: #777a76; text-align: left; cursor: pointer; }
+.reference-hub-nav nav button:hover { color: #c4c1b9; background: #14161a; }
+.reference-hub-nav nav button.active { border-left-color: var(--red-bright); background: linear-gradient(90deg, rgba(166,32,49,.16), transparent); }
+.reference-hub-nav nav button > small { color: #4f524f; font: 7px monospace; }
+.reference-hub-nav nav button.active > small { color: var(--red-bright); }
+.reference-hub-nav nav button span { display: grid; gap: 4px; }
+.reference-hub-nav nav button b { color: inherit; font: 500 12px Oswald; letter-spacing: .08em; text-transform: uppercase; }
+.reference-hub-nav nav button i { color: #555854; font: normal 7px/1.35 monospace; }
+.reference-hub-nav > a { min-height: 48px; display: flex; align-items: center; padding: 0 20px; color: #827e78; font: 7px monospace; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; }
+.reference-hub-nav > a:hover { color: var(--cream); }
+
+/* Player-facing encyclopedia */
+.pedia-page { width: min(1240px, calc(100% - 72px)); padding-bottom: 120px; }
+.pedia-hero { display: grid; grid-template-columns: 1.2fr .8fr; gap: 80px; align-items: end; padding: 12px 0 48px; border-bottom: 1px solid var(--line); }
+.pedia-hero h2 { margin-top: 24px; font-size: clamp(48px, 7vw, 92px); line-height: .87; }
+.pedia-hero h2 em { color: var(--red-bright); font: italic 400 .58em Georgia, serif; text-transform: none; }
+.pedia-hero > p { margin: 0; padding-left: 22px; border-left: 1px solid #494c50; color: #8b8c87; font: 15px/1.75 Georgia, serif; }
+.pedia-access-note { min-height: 82px; display: grid; grid-template-columns: 190px 1fr; gap: 24px; align-items: center; margin: 0 0 48px; padding: 19px 24px; border: 1px solid #543038; border-top: 0; background: repeating-linear-gradient(135deg, rgba(166,32,49,.045) 0, rgba(166,32,49,.045) 2px, transparent 2px, transparent 10px); }
+.pedia-access-note span { color: var(--red-bright); font: 500 13px Oswald; letter-spacing: .12em; }
+.pedia-access-note p { margin: 0; color: #747772; font: 9px/1.65 monospace; }
+.pedia-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-bottom: 14px; }
+.pedia-kind-tabs { display: flex; }
+.pedia-kind-tabs button { min-width: 140px; min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 17px; border: 1px solid #34373b; border-right: 0; background: #101216; color: #747772; font: 500 11px Oswald; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+.pedia-kind-tabs button:last-child { border-right: 1px solid #34373b; }
+.pedia-kind-tabs button small { color: #4e514e; font: 8px monospace; }
+.pedia-kind-tabs button > i { margin-left: auto; color: #555955; font: normal 7px monospace; }
+.pedia-kind-tabs button:hover { color: #c7c3bb; }
+.pedia-kind-tabs button.active { color: var(--cream); border-bottom-color: var(--red-bright); background: linear-gradient(0deg, rgba(166,32,49,.18), #101216 70%); }
+.pedia-kind-tabs button.active small { color: var(--red-bright); }
+.pedia-search { width: min(330px, 35vw); }
+.pedia-search span { display: block; margin-bottom: 7px; color: #5f625e; font: 7px monospace; letter-spacing: .1em; text-transform: uppercase; }
+.pedia-search input { width: 100%; min-height: 42px; padding: 0 13px; outline: 0; border: 1px solid #36393d; background: #0f1114; color: #c3c0b8; font: 10px monospace; }
+.pedia-search input:focus { border-color: #78404a; box-shadow: 0 0 0 2px rgba(166,32,49,.08); }
+.pedia-search input::placeholder { color: #4f524f; }
+.pedia-index { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 80px; border-top: 1px solid #34373b; border-left: 1px solid #34373b; }
+.pedia-index > button { min-height: 250px; display: flex; flex-direction: column; padding: 24px; border: 0; border-right: 1px solid #34373b; border-bottom: 1px solid #34373b; background: #0f1114; color: inherit; text-align: left; cursor: pointer; transition: background .2s, box-shadow .2s; }
+.pedia-index > button:hover { background: #14161a; }
+.pedia-index > button.selected { background: linear-gradient(145deg, rgba(166,32,49,.17), #101216 55%); box-shadow: inset 0 -2px var(--red-bright); }
+.pedia-index > button > div { width: 100%; display: flex; justify-content: space-between; gap: 15px; color: var(--red-bright); font: 7px monospace; letter-spacing: .08em; text-transform: uppercase; }
+.pedia-index > button > div small { color: #565955; text-align: right; }
+.pedia-index h3 { margin: 42px 0 11px; color: #ccc8c0; font: 500 25px Oswald; letter-spacing: .04em; text-transform: uppercase; }
+.pedia-index p { color: #747672; font: 10px/1.65 Inter, sans-serif; }
+.pedia-index footer { min-height: 0; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 5px; margin-top: auto; padding: 18px 0 0; border: 0; background: transparent; }
+.pedia-index footer i { padding: 4px 7px; border: 1px solid #303338; color: #5e615d; font: normal 7px monospace; text-transform: uppercase; }
+.pedia-no-results { grid-column: 1 / -1; margin: 0; padding: 34px; border-right: 1px solid #34373b; border-bottom: 1px solid #34373b; color: #626561; font: 9px monospace; }
+
+.district-dossier { overflow: hidden; position: relative; border: 1px solid #44474b; background: #d7d2c8; color: #1f2021; box-shadow: 0 35px 90px rgba(0,0,0,.45); }
+.district-dossier:before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: .28; background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(18,19,20,.08) 3px, rgba(18,19,20,.08) 4px); }
+.district-dossier > * { position: relative; z-index: 1; }
+.district-dossier-head { min-height: 190px; display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; padding: 46px 54px 34px; }
+.district-dossier-head span { color: #8b222e; font: 8px monospace; letter-spacing: .12em; }
+.district-dossier-head h3 { margin: 17px 0 2px; color: #101112; font: 600 clamp(44px, 6vw, 78px)/.9 Oswald; letter-spacing: -.025em; text-transform: uppercase; }
+.district-dossier-head p { color: #56524d; font: 9px monospace; text-transform: uppercase; }
+.knowledge-stamp { padding: 10px 14px; border: 3px double #9c303a; color: #9c303a; font: 600 12px Oswald; letter-spacing: .12em; text-transform: uppercase; transform: rotate(3deg); }
+.district-editorial { display: grid; grid-template-columns: 1.15fr .85fr; min-height: 520px; }
+.district-copy { padding: 30px 54px 45px; }
+.district-copy p { max-width: 710px; margin-bottom: 27px; color: #252526; font: 17px/1.62 Georgia, serif; }
+.district-copy p:last-child { padding: 18px 20px; border-left: 4px solid #a32b37; background: rgba(154,42,52,.08); color: #514c47; font-size: 13px; }
+.district-visuals { min-height: 520px; position: relative; overflow: hidden; }
+.district-photo { position: absolute; margin: 0; padding: 8px 8px 30px; border: 1px solid #77716a; background: #eee9df; box-shadow: 0 18px 38px rgba(29,28,27,.32); }
+.district-photo img { width: 100%; height: 100%; display: block; object-fit: cover; filter: grayscale(.45) contrast(1.08) sepia(.08); }
+.district-photo--main { width: 74%; height: 310px; right: 4%; top: 5px; transform: rotate(2.5deg); }
+.district-photo--secondary { width: 47%; height: 225px; left: 0; top: 250px; z-index: 3; transform: rotate(-4deg); }
+.district-map { width: 60%; height: 210px; position: absolute; right: -4%; bottom: 4px; overflow: hidden; border: 8px solid #eee9df; background-color: #bcb8b1; background-image: linear-gradient(28deg, transparent 42%, rgba(255,255,255,.78) 43%, rgba(255,255,255,.78) 46%, transparent 47%), linear-gradient(112deg, transparent 40%, rgba(53,55,56,.44) 41%, rgba(53,55,56,.44) 43%, transparent 44%), repeating-linear-gradient(0deg, transparent 0, transparent 16px, rgba(52,54,55,.2) 17px, transparent 18px), repeating-linear-gradient(90deg, transparent 0, transparent 20px, rgba(52,54,55,.16) 21px, transparent 22px); transform: rotate(1.2deg); }
+.district-map i { width: 9px; height: 9px; position: absolute; border: 2px solid #8f2632; border-radius: 50%; }
+.district-map i:nth-child(1) { left: 22%; top: 26%; }
+.district-map i:nth-child(2) { left: 55%; top: 57%; }
+.district-map i:nth-child(3) { right: 16%; top: 34%; }
+.district-map b { position: absolute; left: 43%; top: 38%; padding: 5px; color: #202122; background: rgba(228,223,213,.76); font: 600 10px/1.05 Oswald; }
+.district-map span { position: absolute; right: 6px; bottom: 5px; color: #514e4a; font: 7px monospace; }
+.district-bottom { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: end; padding: 0 54px 42px; }
+.district-notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.district-notes section { min-height: 180px; padding: 21px; background: #8f2632; color: #f0e9df; box-shadow: inset 0 0 25px rgba(50,5,12,.12); }
+.district-notes section.rumor { background: #73242d; }
+.district-notes small { display: block; padding-bottom: 9px; border-bottom: 1px solid rgba(255,255,255,.25); color: #f1c7c9; font: 7px monospace; letter-spacing: .1em; text-transform: uppercase; }
+.district-notes p { margin: 18px 0 0; font: 13px/1.55 Georgia, serif; }
+.district-profile { padding: 19px; border: 1px solid #aaa39b; background: rgba(243,239,231,.86); box-shadow: 8px 10px 0 rgba(42,39,37,.1); transform: rotate(-1deg); }
+.district-profile > div { padding-bottom: 13px; border-bottom: 1px solid #bbb4ab; }
+.district-profile > div span, .district-profile > div small { display: block; color: #343332; font: 600 9px Oswald; letter-spacing: .08em; }
+.district-profile > div small { margin-top: 4px; color: #827c75; font: 6px monospace; }
+.district-profile dl { margin: 13px 0 0; }
+.district-profile dl > div { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.district-profile dt { color: #282727; font: 600 12px Oswald; }
+.district-profile dt small { display: block; color: #8e8780; font: 6px monospace; }
+.district-profile dd { margin: 0; }
+.pedia-rating { display: flex; gap: 4px; }
+.pedia-rating i { width: 10px; height: 10px; border: 1px solid #373636; border-radius: 50%; }
+.pedia-rating i.filled { background: #202020; box-shadow: inset 0 0 0 2px #e4ded4; }
+.night-rules { display: grid; grid-template-columns: 260px 1fr; gap: 32px; padding: 30px 54px; border-top: 1px solid #a9a39a; background: rgba(238,233,224,.7); }
+.night-rules > div span, .night-rules > div small { display: block; color: #8f2632; font: 600 12px Oswald; letter-spacing: .1em; }
+.night-rules > div small { margin-top: 7px; color: #746f69; font: 7px monospace; }
+.night-rules ol { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 0; padding: 0; list-style: none; counter-reset: night-rule; }
+.night-rules li { counter-increment: night-rule; color: #393735; font: 11px/1.55 Inter, sans-serif; }
+.night-rules li:before { content: "0" counter(night-rule); display: block; margin-bottom: 9px; color: #9c303a; font: 8px monospace; }
+
+.faction-dossier { overflow: hidden; scroll-margin-top: 20px; border: 1px solid #44474b; background: #101216; box-shadow: 0 35px 90px rgba(0,0,0,.35); }
+.faction-dossier > header { min-height: 175px; display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; padding: 42px 48px; border-bottom: 1px solid #34373b; background: repeating-linear-gradient(135deg, rgba(166,32,49,.04) 0, rgba(166,32,49,.04) 2px, transparent 2px, transparent 11px); }
+.faction-dossier > header span { color: var(--red-bright); font: 8px monospace; letter-spacing: .12em; }
+.faction-dossier > header h3 { margin: 19px 0 5px; color: var(--cream); font: 500 clamp(42px, 6vw, 72px)/.9 Oswald; text-transform: uppercase; }
+.faction-dossier > header p { color: #6d706c; font: 8px monospace; text-transform: uppercase; }
+.faction-dossier blockquote { margin: 0; padding: 38px 48px; border-bottom: 1px solid #34373b; color: #c8c3ba; font: italic 21px/1.45 Georgia, serif; }
+.faction-columns { display: grid; grid-template-columns: repeat(2, 1fr); }
+.faction-columns section { min-height: 190px; padding: 30px 34px; border-right: 1px solid #303338; border-bottom: 1px solid #303338; }
+.faction-columns section:nth-child(even) { border-right: 0; }
+.faction-columns small, .faction-dossier > footer > span { display: block; margin-bottom: 18px; color: var(--red-bright); font: 7px monospace; letter-spacing: .12em; }
+.faction-columns p, .faction-columns li { color: #7d807b; font: 11px/1.65 Inter, sans-serif; }
+.faction-columns ul { margin: 0; padding-left: 16px; }
+.faction-columns .faction-price { background: rgba(166,32,49,.08); }
+.faction-dossier > footer { min-height: 74px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 9px; padding: 18px 34px; border: 0; background: #0c0e11; }
+.faction-dossier > footer > span { width: 100%; margin: 0 0 3px; }
+.faction-dossier > footer i { padding: 6px 9px; border: 1px solid #34373b; color: #747772; font: normal 8px monospace; text-transform: uppercase; }
+
+.levers-cracks { margin: 60px 0; border: 1px solid #34373b; background: #0f1114; }
+.levers-intro { display: grid; grid-template-columns: 1.1fr .9fr; gap: 35px; padding: 32px; border-bottom: 1px solid #34373b; }
+.levers-intro p { margin: 0; color: #969792; font: 14px/1.75 Georgia, serif; }
+.levers-intro strong { color: var(--cream); }
+.levers-intro ol { margin: 0; padding-left: 22px; color: #747772; font: 10px/1.75 Inter, sans-serif; }
+.levers-intro b { color: var(--red-bright); }
+.lever-examples { display: grid; grid-template-columns: 1fr 1fr; }
+.lever-examples article { min-height: 220px; padding: 28px 32px; border-right: 1px solid #34373b; }
+.lever-examples article:last-child { border-right: 0; background: rgba(166,32,49,.06); }
+.lever-examples small { color: var(--red-bright); font: 7px monospace; letter-spacing: .1em; }
+.lever-examples h4 { margin: 38px 0 12px; color: #c9c5bd; font: 500 25px Oswald; text-transform: uppercase; }
+.lever-examples p { color: #747772; font: 10px/1.65 Inter, sans-serif; }
+.levers-cracks > footer { display: block; min-height: 0; padding: 16px 32px; border-top: 1px solid #34373b; background: #0b0d10; color: #686b67; font: 8px/1.6 monospace; }
+
+.pedia-empty { display: grid; grid-template-columns: .85fr 1.15fr; min-height: 460px; border: 1px solid #34373b; background: #0f1114; }
+.pedia-empty-copy { padding: 48px; border-right: 1px solid #34373b; }
+.pedia-empty-copy > span { color: var(--red-bright); font: 8px monospace; letter-spacing: .12em; }
+.pedia-empty-copy h3 { margin: 70px 0 18px; color: #c9c5bd; font: 500 34px/1.1 Oswald; text-transform: uppercase; }
+.pedia-empty-copy p { color: #777a76; font: 12px/1.75 Georgia, serif; }
+.pedia-field-grid { display: grid; grid-template-rows: repeat(3, 1fr); }
+.pedia-field-grid article { display: grid; grid-template-columns: 70px 180px 1fr; gap: 18px; align-items: center; padding: 25px 30px; border-bottom: 1px solid #303338; }
+.pedia-field-grid article:last-child { border-bottom: 0; }
+.pedia-field-grid small { color: #565955; font: 7px monospace; }
+.pedia-field-grid strong { color: #aaa8a2; font: 500 14px Oswald; text-transform: uppercase; }
+.pedia-field-grid p { margin: 0; color: #686b67; font: 9px/1.55 monospace; }
+
 footer { grid-column: 1 / -1; display: grid; grid-template-columns: auto 44px minmax(260px, 720px); gap: 18px; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); background: #090a0c; padding: 4px 24px; color: #464844; font: 7px/1.35 monospace; letter-spacing: .06em; z-index: 4; }
 footer img { display: block; max-width: 40px; max-height: 36px; opacity: .65; }
 footer .legal { text-align: right; }
@@ -580,6 +741,21 @@ footer .legal { text-align: right; }
   .predator-reference > div:last-child, .court-reference > div:last-child { grid-template-columns: repeat(2, 1fr); }
   .clan-catalogue-head { align-items: flex-start; flex-direction: column; }
   .clan-filters { justify-content: flex-start; }
+  .reference-hub { width: 100%; }
+  .reference-hub-content { width: 100%; }
+  .reference-hub-content > .page { width: min(100% - 32px, 720px); }
+  .reference-hub-nav { width: min(290px, calc(100vw - 58px)); max-height: calc(100dvh - 150px); right: 10px; top: 84px; overflow-y: auto; }
+  .reference-hub-nav.collapsed { width: 40px; right: 0; top: 106px; overflow: hidden; }
+  .reference-hub-nav.collapsed .reference-hub-toggle { min-height: 148px; }
+  .pedia-hero { grid-template-columns: 1fr; gap: 28px; }
+  .pedia-index { grid-template-columns: 1fr 1fr; }
+  .district-editorial { grid-template-columns: 1fr; }
+  .district-visuals { min-height: 500px; }
+  .district-bottom { grid-template-columns: 1fr; }
+  .district-profile { width: min(100%, 360px); justify-self: end; }
+  .night-rules { grid-template-columns: 1fr; }
+  .pedia-empty { grid-template-columns: 1fr; }
+  .pedia-empty-copy { border-right: 0; border-bottom: 1px solid #34373b; }
 }
 
 @media (max-width: 560px) {
@@ -695,6 +871,45 @@ footer .legal { text-align: right; }
   .clan-catalogue-head { align-items: flex-start; }
   .clan-grid > article { min-height: 330px; }
   .society-principles > dl { grid-template-columns: 1fr; }
+  .reference-hub-content > .page { width: min(100% - 28px, 720px); }
+  .pedia-page { width: min(100% - 28px, 720px); }
+  .pedia-hero { padding-top: 0; }
+  .pedia-hero h2 { font-size: 46px; }
+  .pedia-hero > p { padding-left: 14px; font-size: 13px; }
+  .pedia-access-note { grid-template-columns: 1fr; gap: 7px; padding: 17px; }
+  .pedia-toolbar { align-items: stretch; flex-direction: column; }
+  .pedia-kind-tabs { width: 100%; }
+  .pedia-kind-tabs button { min-width: 0; flex: 1; justify-content: center; padding: 0 9px; }
+  .pedia-kind-tabs button small { display: none; }
+  .pedia-search { width: 100%; }
+  .pedia-index { grid-template-columns: 1fr; margin-bottom: 55px; }
+  .pedia-index > button { min-height: 210px; }
+  .district-dossier-head { min-height: 160px; padding: 30px 22px; }
+  .district-dossier-head h3 { font-size: 48px; }
+  .knowledge-stamp { font-size: 9px; }
+  .district-copy { padding: 15px 22px 30px; }
+  .district-copy p { font-size: 14px; }
+  .district-visuals { min-height: 430px; }
+  .district-photo--main { width: 83%; height: 260px; }
+  .district-photo--secondary { width: 54%; height: 190px; top: 215px; }
+  .district-map { width: 63%; height: 175px; }
+  .district-bottom { padding: 0 15px 26px; }
+  .district-notes { grid-template-columns: 1fr; }
+  .district-notes section { min-height: 0; }
+  .district-profile { width: 100%; }
+  .night-rules { padding: 25px 22px; }
+  .night-rules ol { grid-template-columns: 1fr; gap: 18px; }
+  .pedia-empty-copy { padding: 30px 23px; }
+  .pedia-empty-copy h3 { margin-top: 45px; font-size: 28px; }
+  .pedia-field-grid article { grid-template-columns: 55px 1fr; padding: 20px; }
+  .pedia-field-grid p { grid-column: 2; }
+  .faction-dossier > header { min-height: 150px; padding: 30px 22px; }
+  .faction-dossier > header h3 { font-size: 43px; }
+  .faction-dossier blockquote { padding: 28px 22px; font-size: 17px; }
+  .faction-columns { grid-template-columns: 1fr; }
+  .faction-columns section, .faction-columns section:nth-child(even) { min-height: 0; border-right: 0; }
+  .levers-intro, .lever-examples { grid-template-columns: 1fr; }
+  .lever-examples article { min-height: 0; border-right: 0; border-bottom: 1px solid #34373b; }
   footer { padding: 2px 12px; grid-template-columns: 1fr 34px; }
   footer img { max-width: 30px; max-height: 30px; }
   footer .legal { display: none; }

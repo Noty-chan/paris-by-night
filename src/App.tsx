@@ -1,23 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Character, defaultCharacter, migrateCharacter } from "./data/character";
 import { CharacterSheet } from "./components/CharacterSheet";
+import { EncyclopediaPage } from "./components/EncyclopediaPage";
 import { CreationPage, DisciplinesPage, RulesPage, SocietyPage, StatsPage } from "./components/ReferencePages";
 import { importWod5Pdf } from "./lib/wod5PdfImport";
 
-type Tab = "home" | "city" | "rules" | "stats" | "disciplines" | "creation" | "society" | "sheet" | "dice" | "templates";
+type Tab = "home" | "city" | "pedia" | "reference" | "sheet" | "dice";
+type ReferenceSection = "rules" | "stats" | "disciplines" | "creation" | "society";
 type Die = { value: number; hunger: boolean };
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
   { id: "city", label: "Город", index: "01" },
-  { id: "rules", label: "Правила", index: "02" },
-  { id: "stats", label: "Параметры", index: "03" },
-  { id: "disciplines", label: "Дисциплины", index: "04" },
-  { id: "creation", label: "Создание", index: "05" },
-  { id: "society", label: "Общество", index: "06" },
-  { id: "sheet", label: "Лист", index: "07" },
-  { id: "dice", label: "Броски", index: "08" },
-  { id: "templates", label: "Шаблоны", index: "09" },
+  { id: "pedia", label: "Архив", index: "02" },
+  { id: "reference", label: "Справочник", index: "03" },
+  { id: "sheet", label: "Лист", index: "04" },
+  { id: "dice", label: "Броски", index: "05" },
+];
+
+const REFERENCE_NAV: { id: ReferenceSection; label: string; detail: string }[] = [
+  { id: "rules", label: "Правила", detail: "Пулы, Голод и частые проверки" },
+  { id: "stats", label: "Параметры", detail: "Атрибуты и Навыки" },
+  { id: "disciplines", label: "Дисциплины", detail: "Возможности крови" },
+  { id: "creation", label: "Создание", detail: "Персонаж шаг за шагом" },
+  { id: "society", label: "Общество", detail: "Секты, кланы и двор" },
 ];
 
 const CITY_PHOTOS = [
@@ -31,13 +37,6 @@ const CITY_PHOTOS = [
   { src: "./paris/paris-plages-2004.jpg", alt: "Парижский пляж на набережной в 2004 году", label: "Paris Plages / 2004", note: "Летняя толпа — хорошее прикрытие и плохой контроль.", href: "https://commons.wikimedia.org/wiki/File:Paris_Plages_2004_1.jpg", credit: "Thor19 · CC BY-SA 3.0" },
   { src: "./paris/porte-saint-martin-2004.jpg", alt: "Порта Сен-Мартен в Париже в мае 2004 года", label: "Porte Saint-Martin", note: "Арка пережила режимы. Район переживёт ещё один.", href: "https://commons.wikimedia.org/wiki/File:Porte_Saint-Martin,_Paris_May_2004.jpg", credit: "edwin.11 · CC BY 2.0" },
   { src: "./paris/louvre-cour-2004.jpg", alt: "Двор Наполеона у Лувра в 2004 году", label: "Louvre / cour", note: "Самое людное место может оказаться самым безличным.", href: "https://commons.wikimedia.org/wiki/File:Cour_Napol%C3%A9on_from_the_northwest_(300158730).jpg", credit: "edwin.11 · CC BY 2.0" },
-];
-
-const TEMPLATES = [
-  { code: "PERS", title: "Персонаж", text: "Имя, роль в городе, желание, страх, рычаг давления и три версии правды." },
-  { code: "FACT", title: "Фракция", text: "Публичная цель, настоящий интерес, ресурсы, раскол внутри и отношения с соседями." },
-  { code: "LOCI", title: "Место", text: "Впечатление, хозяин, правило территории, опасность и деталь, которую запомнят." },
-  { code: "RUMR", title: "Слух", text: "Кто рассказал, кому выгодно, что в нём правда и что изменится, если поверить." },
 ];
 
 function loadCharacter(): Character {
@@ -79,12 +78,15 @@ function interpretDice(dice: Die[], difficulty: number) {
 
 export function App() {
   const [tab, setTab] = useState<Tab>("home");
+  const [referenceSection, setReferenceSection] = useState<ReferenceSection>("rules");
+  const [referenceCollapsed, setReferenceCollapsed] = useState(() => window.matchMedia("(max-width: 900px)").matches);
   const [character, setCharacter] = useState<Character>(loadCharacter);
   const [saved, setSaved] = useState(true);
   const [pool, setPool] = useState(6);
   const [hunger, setHunger] = useState(1);
   const [difficulty, setDifficulty] = useState(2);
   const [dice, setDice] = useState<Die[]>([]);
+  const [rollId, setRollId] = useState(0);
   const [rollSource, setRollSource] = useState("");
   const [rouseResult, setRouseResult] = useState<number | null>(null);
   const [rouseApplied, setRouseApplied] = useState(false);
@@ -103,12 +105,13 @@ export function App() {
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [tab]);
+  }, [tab, referenceSection]);
 
   const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
 
   const roll = () => {
     const hungerCount = Math.min(hunger, pool);
+    setRollId((current) => current + 1);
     setDice(Array.from({ length: pool }, (_, i) => ({ value: Math.floor(Math.random() * 10) + 1, hunger: i >= pool - hungerCount })));
   };
 
@@ -168,7 +171,7 @@ export function App() {
           <span className="brand-mark">P//N</span>
           <span><strong>PARIS // NUIT</strong><small>chronicle utility · v5</small></span>
         </button>
-        <div className="connection"><i /> réseau privé <span>17.10.2004 · 00:42</span></div>
+        <div className="connection"><i /> réseau privé <span>AUTOMNE 2004 · 00:42</span></div>
       </header>
 
       <aside className="sidebar">
@@ -200,7 +203,7 @@ export function App() {
               <article><span className="card-code">СОСТОЯНИЕ</span><strong>Голод {character.hunger}</strong><p>Человечность {character.humanity} · Могущество крови {character.bloodPotency}</p><button onClick={() => setTab("dice")}>Перейти к броскам →</button></article>
               <article className="signal"><span className="card-code">ВХОДЯЩИЙ СИГНАЛ</span><strong>ПОМЕХИ // НЕТ ДАННЫХ</strong><p>▒▒▒▒▒ ░░▒▒ 01001110 // сигнал не распознан</p><small>канал занят · повторить позже</small></article>
             </div>
-            <button className="city-teaser" onClick={() => setTab("city")}><span>01 / ДОСЬЕ ГОРОДА</span><strong>2 161 932 живых. Около 120 признанных мёртвых.</strong><i>Войти в Париж →</i></button>
+            <button className="city-teaser" onClick={() => setTab("city")}><span>01 / ДОСЬЕ ГОРОДА</span><strong>Больше десяти миллионов живых. Число мёртвых не опубликовано.</strong><i>Войти в Париж →</i></button>
           </section>
         )}
 
@@ -214,8 +217,8 @@ export function App() {
             <div className="city-numbers" aria-label="Население Парижа и домена">
               <article><small>в черте города</small><strong>2 161 932</strong><span>человека</span></article>
               <article><small>агломерация</small><strong>≈ 10 млн</strong><span>человек</span></article>
-              <article className="kindred-number"><small>реестр домена</small><strong>≈ 120</strong><span>признанных Сородичей</span></article>
-              <p>Несколько десятков могут существовать вне реестра: гости, беглецы, тонкокровные и незаконные потомки. Точного числа не знает даже двор.</p>
+              <article className="kindred-number"><small>реестр домена</small><strong>закрыто</strong><span>данные не опубликованы</span></article>
+              <p>Разные источники называют разные цифры. Официальный список, если он существует, не является общедоступным знанием.</p>
             </div>
 
             <div className="city-copy city-copy--split">
@@ -248,15 +251,34 @@ export function App() {
           </section>
         )}
 
-        {tab === "rules" && <RulesPage />}
+        {tab === "pedia" && <EncyclopediaPage />}
 
-        {tab === "stats" && <StatsPage />}
-
-        {tab === "disciplines" && <DisciplinesPage />}
-
-        {tab === "creation" && <CreationPage onOpenSheet={() => setTab("sheet")} />}
-
-        {tab === "society" && <SocietyPage />}
+        {tab === "reference" && (
+          <div className="reference-hub">
+            <div className="reference-hub-content">
+              {referenceSection === "rules" && <RulesPage />}
+              {referenceSection === "stats" && <StatsPage />}
+              {referenceSection === "disciplines" && <DisciplinesPage />}
+              {referenceSection === "creation" && <CreationPage onOpenSheet={() => setTab("sheet")} />}
+              {referenceSection === "society" && <SocietyPage />}
+            </div>
+            <aside className={`reference-hub-nav ${referenceCollapsed ? "collapsed" : ""}`} aria-label="Разделы справочника">
+              <button className="reference-hub-toggle" type="button" aria-expanded={!referenceCollapsed} onClick={() => setReferenceCollapsed((current) => !current)}>
+                <span>{referenceCollapsed ? "V5 // СПРАВОЧНИК" : "Свернуть"}</span><i>{referenceCollapsed ? "‹" : "›"}</i>
+              </button>
+              <header><span>QUICK REFERENCE</span><strong>Шпаргалки V5</strong><p>Вся справочная часть собрана здесь. Полные формулировки по-прежнему открываются на WOD5.</p></header>
+              <nav>
+                {REFERENCE_NAV.map((item, index) => (
+                  <button className={referenceSection === item.id ? "active" : ""} key={item.id} onClick={() => setReferenceSection(item.id)}>
+                    <small>{String(index + 1).padStart(2, "0")}</small>
+                    <span><b>{item.label}</b><i>{item.detail}</i></span>
+                  </button>
+                ))}
+              </nav>
+              <a href="https://wta5.ru/vampire" target="_blank" rel="noreferrer">Полный справочник WOD5 ↗</a>
+            </aside>
+          </div>
+        )}
 
         {tab === "sheet" && (
           <section className="page">
@@ -274,8 +296,8 @@ export function App() {
                 <span className="panel-label">{rollSource ? `Проверка / ${rollSource}` : "Собрать пул"}</span>
                 <div className="number-controls"><label><span>Всего костей</span><input type="number" min="1" max="20" value={pool} onChange={(e) => setPool(Math.max(1, Math.min(20, +e.target.value)))} /></label><label><span>Голод</span><input type="number" min="0" max="5" value={hunger} onChange={(e) => setHunger(Math.max(0, Math.min(5, +e.target.value)))} /></label><label><span>Сложность</span><input type="number" min="1" max="10" value={difficulty} onChange={(e) => setDifficulty(Math.max(1, Math.min(10, +e.target.value)))} /></label></div>
                 <button className="roll-button" onClick={roll}><span>БРОСИТЬ</span><small>{pool - Math.min(pool, hunger)} обычных + {Math.min(pool, hunger)} голодных</small></button>
-                <div className="dice-tray">{dice.length ? dice.map((die, i) => <DiceFace die={die} key={`${i}-${die.value}`} />) : <p>Результат появится здесь</p>}</div>
-                <div className={`result ${result.success ? "success" : ""}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
+                <div className={`dice-tray ${dice.length ? "rolling" : ""}`} key={`tray-${rollId}`}>{dice.length ? dice.map((die, i) => <div className="die-stage" style={{ animationDelay: `${i * 38}ms` }} key={`${rollId}-${i}-${die.value}`}><DiceFace die={die} /></div>) : <p>Результат появится здесь</p>}</div>
+                <div className={`result ${result.success ? "success" : ""}`} key={`result-${rollId}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
               </div>
               <aside className="quick-rules panel">
                 <span className="panel-label">Быстрые действия</span>
@@ -292,17 +314,9 @@ export function App() {
           </section>
         )}
 
-        {tab === "templates" && (
-          <section className="page templates-page">
-            <div className="page-head"><div><div className="eyebrow">Заготовки хроники / черновой архив</div><h2>Шаблоны</h2></div><span className="muted">4 формуляра</span></div>
-            <p className="intro">Короткие структуры, из которых мы позже соберём живой Париж. Они удерживают важное и не заставляют заполнять энциклопедию.</p>
-            <div className="template-grid">{TEMPLATES.map((item, i) => <article key={item.code}><div><span>{item.code}–0{i + 1}</span><small>formulaire</small></div><h3>{item.title}</h3><p>{item.text}</p><button onClick={() => navigator.clipboard?.writeText(item.text)}>Копировать основу</button></article>)}</div>
-            <div className="incoming"><span>СЛЕДУЮЩИЙ ПАКЕТ</span><p>Домены · Долги · События · Улики</p><small>ожидает наполнения мира</small></div>
-          </section>
-        )}
       </main>
       <footer>
-        <span className="build">PARIS // NUIT · BUILD 0.3</span>
+        <span className="build">PARIS // NUIT · BUILD 0.5</span>
         <a href="https://www.paradoxinteractive.com/games/world-of-darkness/community/dark-pack-agreement" target="_blank" rel="noreferrer"><img src="./dark-pack.webp" alt="Dark Pack" /></a>
         <span className="legal">NOT OFFICIAL WORLD OF DARKNESS MATERIAL · Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved.</span>
       </footer>
