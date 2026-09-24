@@ -6,7 +6,7 @@ export type DistrictEntry = PediaEntry & { kind: "district"; image: string; imag
 export type FactionEntry = PediaEntry & { kind: "faction"; claim: string; resources: string[]; offer: string; price: string; zones: string[] };
 
 export const KNOWLEDGE_LABELS: Record<KnowledgeState, string> = { public: "Общедоступно", rumor: "Слух", discovered: "Открыто в игре" };
-export const PEDIA_KIND_LABELS: Record<PediaKind, string> = { district: "Зоны", faction: "Фракции", person: "Лица" };
+export const PEDIA_KIND_LABELS: Record<PediaKind, string> = { district: "Зоны", faction: "Местные силы", person: "Лица" };
 
 const metric = (capital: number, flow: number, control: number, services: number): DistrictMetric[] => [
   { key: "capital", label: "Капитал", original: "Affair", value: capital, hint: "Деньги, собственность и доступные ресурсы" },

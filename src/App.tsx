@@ -2,28 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Character, defaultCharacter, migrateCharacter } from "./data/character";
 import { CharacterSheet } from "./components/CharacterSheet";
 import { EncyclopediaPage } from "./components/EncyclopediaPage";
-import { CreationPage, DisciplinesPage, RulesPage, SocietyPage, StatsPage } from "./components/ReferencePages";
+import { FactionsPage } from "./components/FactionsPage";
+import { DomainPage } from "./components/DomainPage";
+import { RelationsPage } from "./components/RelationsPage";
 import { importWod5Pdf } from "./lib/wod5PdfImport";
 
-type Tab = "home" | "city" | "pedia" | "reference" | "sheet" | "dice";
-type ReferenceSection = "rules" | "stats" | "disciplines" | "creation" | "society";
+type Tab = "home" | "city" | "pedia" | "factions" | "domain" | "relations" | "characters" | "dice";
 type Die = { value: number; hunger: boolean };
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
   { id: "city", label: "Город", index: "01" },
   { id: "pedia", label: "Архив", index: "02" },
-  { id: "reference", label: "Справочник", index: "03" },
-  { id: "sheet", label: "Лист", index: "04" },
-  { id: "dice", label: "Броски", index: "05" },
-];
-
-const REFERENCE_NAV: { id: ReferenceSection; label: string; detail: string }[] = [
-  { id: "rules", label: "Правила", detail: "Пулы, Голод и частые проверки" },
-  { id: "stats", label: "Параметры", detail: "Атрибуты и Навыки" },
-  { id: "disciplines", label: "Дисциплины", detail: "Возможности крови" },
-  { id: "creation", label: "Создание", detail: "Персонаж шаг за шагом" },
-  { id: "society", label: "Общество", detail: "Секты, кланы и двор" },
+  { id: "factions", label: "Фракции", index: "03" },
+  { id: "domain", label: "Домен", index: "04" },
+  { id: "relations", label: "Связи", index: "05" },
+  { id: "characters", label: "Персонажи", index: "06" },
+  { id: "dice", label: "Броски", index: "07" },
 ];
 
 const CITY_PHOTOS = [
@@ -39,12 +34,17 @@ const CITY_PHOTOS = [
   { src: "./paris/louvre-cour-2004.jpg", alt: "Двор Наполеона у Лувра в 2004 году", label: "Louvre / cour", note: "Самое людное место может оказаться самым безличным.", href: "https://commons.wikimedia.org/wiki/File:Cour_Napol%C3%A9on_from_the_northwest_(300158730).jpg", credit: "edwin.11 · CC BY 2.0" },
 ];
 
-function loadCharacter(): Character {
+function loadActivePlayer(): number {
+  const stored = Number(localStorage.getItem("paris-active-player"));
+  return Number.isInteger(stored) && stored >= 1 && stored <= 4 ? stored : 1;
+}
+
+function loadCharacter(player = 1): Character {
   try {
-    const saved = localStorage.getItem("paris-character");
-    return saved ? migrateCharacter(JSON.parse(saved)) : defaultCharacter;
+    const saved = localStorage.getItem(`paris-character-player-${player}`) ?? (player === 1 ? localStorage.getItem("paris-character") : null);
+    return saved ? migrateCharacter(JSON.parse(saved)) : migrateCharacter(defaultCharacter);
   } catch {
-    return defaultCharacter;
+    return migrateCharacter(defaultCharacter);
   }
 }
 
@@ -55,10 +55,10 @@ function DiceGlyph({ kind }: { kind: "failure" | "success" | "critical" | "beast
   return <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 12c4 3 7 7 8 12l-6 13M24 9c2 5 2 10 0 15l-1 15M37 12c-4 3-7 7-8 12l6 13" /><path d="m9 34 4 3 5-1m21-2-4 3-5-1" /></svg>;
 }
 
-function DiceFace({ die }: { die: Die }) {
+function DiceFace({ die, selectable = false, selected = false, onClick }: { die: Die; selectable?: boolean; selected?: boolean; onClick?: () => void }) {
   const kind = die.hunger && die.value === 1 ? "beast" : die.value === 10 ? "critical" : die.value >= 6 ? "success" : "failure";
   const label = kind === "beast" ? "Знак Зверя" : kind === "critical" ? "Крит" : kind === "success" ? "Успех" : "Провал";
-  return <div className={`die ${die.hunger ? "hunger" : "regular"} ${kind}`} role="img" aria-label={`${die.hunger ? "Кость Голода" : "Обычная кость"}: ${label}, выпало ${die.value}`} title={`${label} · ${die.value}`}><DiceGlyph kind={kind} /><small>{label}</small></div>;
+  return <button type="button" className={`die ${die.hunger ? "hunger" : "regular"} ${kind} ${selectable ? "selectable" : ""} ${selected ? "selected" : ""}`} aria-label={`${die.hunger ? "Кость Голода" : "Обычная кость"}: ${label}, выпало ${die.value}${selectable ? ". Можно выбрать для переброса за Волю" : ""}`} aria-pressed={selected} title={`${label} · ${die.value}${selectable ? " · выбрать для переброса" : ""}`} disabled={!selectable} onClick={onClick}><DiceGlyph kind={kind} /><small>{label}</small></button>;
 }
 
 function interpretDice(dice: Die[], difficulty: number) {
@@ -78,14 +78,15 @@ function interpretDice(dice: Die[], difficulty: number) {
 
 export function App() {
   const [tab, setTab] = useState<Tab>("home");
-  const [referenceSection, setReferenceSection] = useState<ReferenceSection>("rules");
-  const [referenceCollapsed, setReferenceCollapsed] = useState(() => window.matchMedia("(max-width: 900px)").matches);
-  const [character, setCharacter] = useState<Character>(loadCharacter);
+  const [activePlayer, setActivePlayer] = useState(loadActivePlayer);
+  const [character, setCharacter] = useState<Character>(() => loadCharacter(activePlayer));
   const [saved, setSaved] = useState(true);
   const [pool, setPool] = useState(6);
   const [hunger, setHunger] = useState(1);
   const [difficulty, setDifficulty] = useState(2);
   const [dice, setDice] = useState<Die[]>([]);
+  const [selectedRerolls, setSelectedRerolls] = useState<number[]>([]);
+  const [willpowerRerolls, setWillpowerRerolls] = useState(0);
   const [rollId, setRollId] = useState(0);
   const [rollSource, setRollSource] = useState("");
   const [rouseResult, setRouseResult] = useState<number | null>(null);
@@ -97,22 +98,38 @@ export function App() {
   useEffect(() => {
     setSaved(false);
     const timer = window.setTimeout(() => {
-      localStorage.setItem("paris-character", JSON.stringify({ ...character, updatedAt: new Date().toISOString() }));
+      const savedCharacter = { ...character, updatedAt: new Date().toISOString() };
+      localStorage.setItem(`paris-character-player-${activePlayer}`, JSON.stringify(savedCharacter));
+      if (activePlayer === 1) localStorage.setItem("paris-character", JSON.stringify(savedCharacter));
       setSaved(true);
     }, 350);
     return () => clearTimeout(timer);
-  }, [character]);
+  }, [activePlayer, character]);
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [tab, referenceSection]);
+  }, [tab]);
+
+  const selectPlayer = (player: number) => {
+    if (player === activePlayer) return;
+    localStorage.setItem(`paris-character-player-${activePlayer}`, JSON.stringify({ ...character, updatedAt: new Date().toISOString() }));
+    localStorage.setItem("paris-active-player", String(player));
+    setActivePlayer(player);
+    setCharacter(loadCharacter(player));
+    setSaved(true);
+  };
 
   const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
+  const willpowerSpent = character.willpowerDamage.reduce<number>((sum, mark) => sum + (mark === 2 ? 2 : mark === 1 ? 1 : 0), 0);
+  const willpowerAvailable = Math.max(0, character.willpowerMax - willpowerSpent);
+  const canSpendWillpower = willpowerAvailable > 0 && character.willpowerDamage.includes(0);
 
   const roll = () => {
     const hungerCount = Math.min(hunger, pool);
     setRollId((current) => current + 1);
     setDice(Array.from({ length: pool }, (_, i) => ({ value: Math.floor(Math.random() * 10) + 1, hunger: i >= pool - hungerCount })));
+    setSelectedRerolls([]);
+    setWillpowerRerolls(0);
   };
 
   const prepareRoll = (source: string, preparedPool: number, preparedHunger: number) => {
@@ -120,7 +137,33 @@ export function App() {
     setPool(preparedPool);
     setHunger(Math.min(preparedHunger, preparedPool));
     setDice([]);
+    setSelectedRerolls([]);
+    setWillpowerRerolls(0);
     setTab("dice");
+  };
+
+  const toggleRerollDie = (index: number) => {
+    if (!canSpendWillpower || dice[index]?.hunger) return;
+    setSelectedRerolls((current) => current.includes(index)
+      ? current.filter((selected) => selected !== index)
+      : current.length < 3 ? [...current, index] : current);
+  };
+
+  const rerollForWillpower = () => {
+    if (!selectedRerolls.length || selectedRerolls.length > 3 || !canSpendWillpower) return;
+    const selected = new Set(selectedRerolls);
+    setDice((current) => current.map((die, index) => selected.has(index) && !die.hunger
+      ? { ...die, value: Math.floor(Math.random() * 10) + 1 }
+      : die));
+    setCharacter((current) => {
+      const willpowerDamage = [...current.willpowerDamage];
+      const emptyMark = willpowerDamage.findIndex((mark) => mark === 0);
+      if (emptyMark < 0) return current;
+      willpowerDamage[emptyMark] = 1;
+      return { ...current, willpowerDamage };
+    });
+    setSelectedRerolls([]);
+    setWillpowerRerolls((current) => current + 1);
   };
 
   const rollRouse = () => {
@@ -189,7 +232,7 @@ export function App() {
               <div>
                 <h1>Париж никогда<br /><em>не спит.</em></h1>
                 <p className="lead">Он просто закрывает глаза, чтобы не видеть, кто проходит по его улицам после полуночи.</p>
-                <div className="hero-actions"><button className="primary" onClick={() => setTab("sheet")}>Открыть досье</button><button className="secondary" onClick={() => setTab("dice")}>Бросить кости</button></div>
+                <div className="hero-actions"><button className="primary" onClick={() => setTab("characters")}>Персонажи</button><button className="secondary" onClick={() => setTab("dice")}>Бросить кости</button></div>
               </div>
               <div className="metro-card">
                 <div className="metro-top"><span>RÉSEAU NOCTURNE</span><small>ligne privée</small></div>
@@ -199,7 +242,7 @@ export function App() {
               </div>
             </div>
             <div className="summary-grid">
-              <article><span className="card-code">DOSSIER ACTIF</span><strong>{character.name}</strong><p>{character.clan} · {character.concept}</p><button onClick={() => setTab("sheet")}>Продолжить заполнение →</button></article>
+              <article><span className="card-code">DOSSIER ACTIF · ИГРОК {activePlayer}</span><strong>{character.name}</strong><p>{character.clan} · {character.concept}</p><button onClick={() => setTab("characters")}>Продолжить заполнение →</button></article>
               <article><span className="card-code">СОСТОЯНИЕ</span><strong>Голод {character.hunger}</strong><p>Человечность {character.humanity} · Могущество крови {character.bloodPotency}</p><button onClick={() => setTab("dice")}>Перейти к броскам →</button></article>
               <article className="signal"><span className="card-code">ВХОДЯЩИЙ СИГНАЛ</span><strong>ПОМЕХИ // НЕТ ДАННЫХ</strong><p>▒▒▒▒▒ ░░▒▒ 01001110 // сигнал не распознан</p><small>канал занят · повторить позже</small></article>
             </div>
@@ -253,37 +296,16 @@ export function App() {
 
         {tab === "pedia" && <EncyclopediaPage />}
 
-        {tab === "reference" && (
-          <div className="reference-hub">
-            <div className="reference-hub-content">
-              {referenceSection === "rules" && <RulesPage />}
-              {referenceSection === "stats" && <StatsPage />}
-              {referenceSection === "disciplines" && <DisciplinesPage />}
-              {referenceSection === "creation" && <CreationPage onOpenSheet={() => setTab("sheet")} />}
-              {referenceSection === "society" && <SocietyPage />}
-            </div>
-            <aside className={`reference-hub-nav ${referenceCollapsed ? "collapsed" : ""}`} aria-label="Разделы справочника">
-              <button className="reference-hub-toggle" type="button" aria-expanded={!referenceCollapsed} onClick={() => setReferenceCollapsed((current) => !current)}>
-                <span>{referenceCollapsed ? "V5 // СПРАВОЧНИК" : "Свернуть"}</span><i>{referenceCollapsed ? "‹" : "›"}</i>
-              </button>
-              <header><span>QUICK REFERENCE</span><strong>Шпаргалки V5</strong><p>Вся справочная часть собрана здесь. Полные формулировки по-прежнему открываются на WOD5.</p></header>
-              <nav>
-                {REFERENCE_NAV.map((item, index) => (
-                  <button className={referenceSection === item.id ? "active" : ""} key={item.id} onClick={() => setReferenceSection(item.id)}>
-                    <small>{String(index + 1).padStart(2, "0")}</small>
-                    <span><b>{item.label}</b><i>{item.detail}</i></span>
-                  </button>
-                ))}
-              </nav>
-              <a href="https://wta5.ru/vampire" target="_blank" rel="noreferrer">Полный справочник WOD5 ↗</a>
-            </aside>
-          </div>
-        )}
+        {tab === "factions" && <FactionsPage />}
+        {tab === "domain" && <DomainPage />}
+        {tab === "relations" && <RelationsPage />}
 
-        {tab === "sheet" && (
-          <section className="page">
-            <div className="page-head"><div><div className="eyebrow">Личное дело / локальная копия</div><h2>Лист персонажа</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
-            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт JSON</button><button onClick={() => wod5PdfImportRef.current?.click()}>Импорт PDF WOD5</button><a className="external" href="https://wta5.ru/vampire/character-creator" target="_blank" rel="noreferrer">Создать на WOD5 ↗</a><input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => { void importSheet(event.target.files?.[0]); event.target.value = ""; }} /><input ref={wod5PdfImportRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { void importWod5Sheet(event.target.files?.[0]); event.target.value = ""; }} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист?") && setCharacter(defaultCharacter)}>Сбросить</button></div>
+        {tab === "characters" && (
+          <section className="page characters-page">
+            <div className="page-head"><div><div className="eyebrow">Досье игроков / локальные копии</div><h2>Персонажи</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
+            <div className="player-slot-bar" aria-label="Листы персонажей игроков">{[1, 2, 3, 4].map((player) => <button type="button" key={player} className={activePlayer === player ? "active" : ""} onClick={() => selectPlayer(player)}><small>ЛИСТ / 0{player}</small><strong>{player === activePlayer ? character.name || "Без имени" : `Игрок ${player}`}</strong><i>{activePlayer === player ? `${character.clan} · ${character.concept}` : "Открыть досье"}</i></button>)}</div>
+            <div className="characters-local-note"><span>ЭТОТ БРАУЗЕР</span><p>У каждого игрока свои локальные данные. Выбери слот, чтобы вести отдельный лист; для переноса между устройствами используй экспорт и импорт JSON.</p></div>
+            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт JSON</button><button onClick={() => wod5PdfImportRef.current?.click()}>Импорт PDF WOD5</button><a className="external" href="https://wta5.ru/vampire/character-creator" target="_blank" rel="noreferrer">Создать на WOD5 ↗</a><input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => { void importSheet(event.target.files?.[0]); event.target.value = ""; }} /><input ref={wod5PdfImportRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { void importWod5Sheet(event.target.files?.[0]); event.target.value = ""; }} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист этого игрока?") && setCharacter(migrateCharacter(defaultCharacter))}>Сбросить этот лист</button></div>
             <CharacterSheet character={character} onChange={setCharacter} onPrepareRoll={prepareRoll} />
           </section>
         )}
@@ -296,7 +318,11 @@ export function App() {
                 <span className="panel-label">{rollSource ? `Проверка / ${rollSource}` : "Собрать пул"}</span>
                 <div className="number-controls"><label><span>Всего костей</span><input type="number" min="1" max="20" value={pool} onChange={(e) => setPool(Math.max(1, Math.min(20, +e.target.value)))} /></label><label><span>Голод</span><input type="number" min="0" max="5" value={hunger} onChange={(e) => setHunger(Math.max(0, Math.min(5, +e.target.value)))} /></label><label><span>Сложность</span><input type="number" min="1" max="10" value={difficulty} onChange={(e) => setDifficulty(Math.max(1, Math.min(10, +e.target.value)))} /></label></div>
                 <button className="roll-button" onClick={roll}><span>БРОСИТЬ</span><small>{pool - Math.min(pool, hunger)} обычных + {Math.min(pool, hunger)} голодных</small></button>
-                <div className={`dice-tray ${dice.length ? "rolling" : ""}`} key={`tray-${rollId}`}>{dice.length ? dice.map((die, i) => <div className="die-stage" style={{ animationDelay: `${i * 38}ms` }} key={`${rollId}-${i}-${die.value}`}><DiceFace die={die} /></div>) : <p>Результат появится здесь</p>}</div>
+                <div className={`dice-tray ${dice.length ? "rolling" : ""}`} key={`tray-${rollId}`}>{dice.length ? dice.map((die, i) => <div className="die-stage" style={{ animationDelay: `${i * 38}ms` }} key={`${rollId}-${i}-${die.value}`}><DiceFace die={die} selectable={!die.hunger && canSpendWillpower} selected={selectedRerolls.includes(i)} onClick={() => toggleRerollDie(i)} /></div>) : <p>Результат появится здесь</p>}</div>
+                {dice.length > 0 && <div className="willpower-reroll">
+                  <div className="willpower-reroll-copy"><strong>{canSpendWillpower ? selectedRerolls.length ? `Выбрано: ${selectedRerolls.length} из 3` : "Перебросить за Волю" : "Нет доступной Воли"}</strong><span>{willpowerRerolls ? `Уже потрачено на эту проверку: ${willpowerRerolls}. ` : ""}Выбери 1–3 белые кости. Кости Голода нельзя; также нельзя перебрасывать проверки Голода, Человечности и Воли.</span></div>
+                  <button type="button" disabled={!selectedRerolls.length || !canSpendWillpower} onClick={rerollForWillpower}>Перебросить · 1 Воля</button>
+                </div>}
                 <div className={`result ${result.success ? "success" : ""}`} key={`result-${rollId}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
               </div>
               <aside className="quick-rules panel">
@@ -308,7 +334,7 @@ export function App() {
                   <button type="button" onClick={rollRouse}>Бросить одну кость</button>
                   {rouseResult !== null && rouseResult < 6 && character.hunger < 5 && <button type="button" className="apply-hunger" disabled={rouseApplied} onClick={applyRouseHunger}>{rouseApplied ? "Голод применён" : `Применить: Голод ${character.hunger} → ${character.hunger + 1}`}</button>}
                 </div>
-                <h3>Читаем кости</h3><dl className="dice-key"><div><dt><span className="key-glyph failure"><DiceGlyph kind="failure" /></span>Провал</dt><dd>1–5 не дают успехов</dd></div><div><dt><span className="key-glyph success"><DiceGlyph kind="success" /></span>Успех</dt><dd>6–9 дают один успех</dd></div><div><dt><span className="key-glyph critical"><DiceGlyph kind="critical" /></span>Крит</dt><dd>каждая пара десяток считается четырьмя успехами</dd></div><div><dt><span className="key-glyph beast"><DiceGlyph kind="beast" /></span>Зверь</dt><dd>только красная 1 и только при общем провале</dd></div></dl><div className="rule-note">Красная критическая грань делает крит грязным, только если её десятка вошла в критическую пару. Кости Голода заменяют обычные кости, но не добавляются к пулу.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a>
+                <h3>Читаем кости</h3><dl className="dice-key"><div><dt><span className="key-glyph failure"><DiceGlyph kind="failure" /></span>Провал</dt><dd>1–5 не дают успехов</dd></div><div><dt><span className="key-glyph success"><DiceGlyph kind="success" /></span>Успех</dt><dd>6–9 дают один успех</dd></div><div><dt><span className="key-glyph critical"><DiceGlyph kind="critical" /></span>Крит</dt><dd>каждая пара десяток считается четырьмя успехами</dd></div><div><dt><span className="key-glyph beast"><DiceGlyph kind="beast" /></span>Зверь</dt><dd>только красная 1 и только при общем провале</dd></div></dl><div className="rule-note">Красная критическая грань делает крит грязным, только если её десятка вошла в критическую пару. Кости Голода заменяют обычные кости, но не добавляются к пулу. Волю нельзя тратить на переброс проверок Голода, Человечности и самой Воли.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a>
               </aside>
             </div>
           </section>
