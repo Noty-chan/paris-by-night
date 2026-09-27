@@ -10,6 +10,7 @@ import {
   DisciplineEntry,
   FLAW_NAMES,
   GENERATIONS,
+  HumanityAnchor,
   healthFromAttributes,
   PREDATOR_TYPES,
   RESONANCES,
@@ -123,12 +124,36 @@ function TraitList({ title, entries, options, onChange }: { title: string; entri
       <div className="subhead"><h4>{title}</h4><button type="button" onClick={() => onChange([...entries, { id: uid("trait"), name: "", rating: 0, note: "" }])}>+ добавить</button></div>
       {entries.map((entry) => (
         <div className="trait-row" key={entry.id}>
-          <select className="compact-select" aria-label={`${title}: название`} value={options.includes(entry.name) ? entry.name : entry.name ? "Другое" : ""} onChange={(event) => update(entry.id, { name: event.target.value })}><option value="">Выбрать…</option>{options.map((name) => <option value={name} key={name}>{name}</option>)}</select>
+          <div className="trait-name-control">
+            <select className="compact-select" aria-label={`${title}: название`} value={entry.name && (entry.name === "Другое" || !options.includes(entry.name)) ? "__custom__" : entry.name} onChange={(event) => update(entry.id, { name: event.target.value === "__custom__" ? "Другое" : event.target.value })}>
+              <option value="">Выбрать…</option>
+              {options.filter((name) => name !== "Другое").map((name) => <option value={name} key={name}>{name}</option>)}
+              <option value="__custom__">Своё название…</option>
+            </select>
+            {entry.name && (entry.name === "Другое" || !options.includes(entry.name)) && <input aria-label={`${title}: своё название`} placeholder="Введите своё название" value={entry.name === "Другое" ? "" : entry.name} onChange={(event) => update(entry.id, { name: event.target.value || "Другое" })} />}
+          </div>
           <Dots value={entry.rating} onChange={(rating) => update(entry.id, { rating })} />
           <input aria-label={`${title}: уточнение`} placeholder="Уточнение или источник" value={entry.note} onChange={(event) => update(entry.id, { note: event.target.value })} />
           <button type="button" className="remove-row" onClick={() => onChange(entries.filter((item) => item.id !== entry.id))} aria-label="Удалить">×</button>
         </div>
       ))}
+    </div>
+  );
+}
+
+function HumanityAnchorList({ entries, onChange }: { entries: HumanityAnchor[]; onChange: (entries: HumanityAnchor[]) => void }) {
+  const update = (id: string, patch: Partial<HumanityAnchor>) => onChange(entries.map((entry) => entry.id === id ? { ...entry, ...patch } : entry));
+  return (
+    <div className="humanity-anchor-list">
+      <div className="humanity-anchor-intro"><strong>Убеждение и опора связаны</strong><span>Запиши каждую пару отдельно: кого или что персонаж считает важным — и какое убеждение эта связь поддерживает.</span></div>
+      {entries.map((entry, index) => (
+        <div className="humanity-anchor-row" key={entry.id}>
+          <label><span>Опора {index + 1}</span><textarea rows={2} value={entry.touchstone} onChange={(event) => update(entry.id, { touchstone: event.target.value })} placeholder="Человек, группа или обязательство" /></label>
+          <label><span>Убеждение {index + 1}</span><textarea rows={2} value={entry.conviction} onChange={(event) => update(entry.id, { conviction: event.target.value })} placeholder="Принцип, который эта связь удерживает" /></label>
+          <button type="button" className="remove-row" onClick={() => onChange(entries.filter((item) => item.id !== entry.id))} aria-label={`Удалить пару ${index + 1}`}>×</button>
+        </div>
+      ))}
+      <button type="button" className="add-row" onClick={() => onChange([...entries, { id: uid("humanity-anchor"), conviction: "", touchstone: "" }])}>+ добавить пару</button>
     </div>
   );
 }
@@ -190,7 +215,13 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
   const flawsTotal = character.flaws.reduce((sum, item) => sum + item.rating, 0);
   const identityValid = Boolean(character.name && character.name !== "Без имени" && character.concept && character.clan !== "Не определён" && character.predatorType);
   const bloodValid = character.healthMax === baseHealth && character.willpowerMax === baseWillpower;
-  const humanityValid = Boolean(character.convictions.trim() && character.touchstones.trim());
+  const humanityValid = character.humanityAnchors.length > 0 && character.humanityAnchors.every((entry) => entry.conviction.trim() && entry.touchstone.trim());
+  const setHumanityAnchors = (humanityAnchors: HumanityAnchor[]) => onChange({
+    ...character,
+    humanityAnchors,
+    convictions: humanityAnchors.map((entry) => entry.conviction).join("\n"),
+    touchstones: humanityAnchors.map((entry) => entry.touchstone).join("\n"),
+  });
   const audit = [
     { label: "Личность", ok: identityValid, text: identityValid ? "концепция, клан и охота выбраны" : "укажи имя, концепцию, клан и тип хищника" },
     { label: "Атрибуты", ok: attributesValid, text: attributesValid ? "схема 4 / 3×3 / 4×2 / 1" : `сейчас уровни 1/2/3/4: ${attributeCounts.join(" / ")}; нужно 1 / 4 / 3 / 1` },
@@ -334,6 +365,9 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
 
       <SectionTitle index="04" title="Дисциплины" hint="3 точки клана + 1 от типа хищника" id="disciplines" status={disciplineTotal === expectedDisciplineTotal ? "ok" : "warn"} />
       <DisciplineList entries={character.disciplines} onChange={(value) => set("disciplines", value)} />
+      <div className="rituals-field">
+        <label><span>Ритуалы и церемонии <small>отдельно от списка Дисциплин</small></span><textarea value={character.ritualsCeremonies} onChange={(event) => set("ritualsCeremonies", event.target.value)} placeholder="Название, уровень и заметки по изученным ритуалам или церемониям…" /></label>
+      </div>
 
       <SectionTitle index="05" title="Преимущества" hint="7 достоинств · минимум 2 недостатка" id="advantages" status={advantagesTotal === 7 && flawsTotal >= 2 ? "ok" : "warn"} />
       <div className="traits-grid">
@@ -342,9 +376,8 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
       </div>
 
       <SectionTitle index="06" title="Человечность и связи" hint="То, ради чего ещё стоит просыпаться" id="humanity" status={humanityValid ? "ok" : "warn"} />
+      <HumanityAnchorList entries={character.humanityAnchors} onChange={setHumanityAnchors} />
       <div className="sheet-text-grid">
-        <TextBox label="Убеждения" value={character.convictions} onChange={(value) => set("convictions", value)} />
-        <TextBox label="Опоры" value={character.touchstones} onChange={(value) => set("touchstones", value)} />
         <TextBox label="Котерия и отношения" value={character.coterie} onChange={(value) => set("coterie", value)} />
         <TextBox label="Убежище и домен" value={character.haven} onChange={(value) => set("haven", value)} />
       </div>

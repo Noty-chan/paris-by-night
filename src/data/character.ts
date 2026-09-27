@@ -1,6 +1,7 @@
 export type Damage = 0 | 1 | 2;
 export type TraitEntry = { id: string; name: string; rating: number; note: string };
 export type DisciplineEntry = { id: string; name: string; rating: number; powers: string };
+export type HumanityAnchor = { id: string; conviction: string; touchstone: string };
 export type Wod5PdfState = { fields: Record<string, string> };
 
 export type ClanProfile = {
@@ -31,6 +32,8 @@ export type Character = {
   skills: Record<string, number>;
   specialties: Record<string, string>;
   disciplines: DisciplineEntry[];
+  ritualsCeremonies: string;
+  humanityAnchors: HumanityAnchor[];
   advantages: TraitEntry[];
   flaws: TraitEntry[];
   hunger: number;
@@ -136,6 +139,8 @@ export const defaultCharacter: Character = {
     { id: "discipline-2", name: "", rating: 0, powers: "" },
     { id: "discipline-3", name: "", rating: 0, powers: "" },
   ],
+  ritualsCeremonies: "",
+  humanityAnchors: [{ id: "humanity-anchor-1", conviction: "", touchstone: "" }],
   advantages: [{ id: "advantage-1", name: "", rating: 0, note: "" }],
   flaws: [{ id: "flaw-1", name: "", rating: 0, note: "" }],
   hunger: 1,
@@ -193,6 +198,24 @@ export function migrateCharacter(raw: Partial<Character>): Character {
   });
   const healthMax = healthFromAttributes(migratedAttributes);
   const willpowerMax = willpowerFromAttributes(migratedAttributes);
+  const legacyConvictions = raw.convictions ?? "";
+  const legacyTouchstones = raw.touchstones ?? "";
+  const existingAnchors = raw.humanityAnchors ?? [];
+  const anchorsConvictions = existingAnchors.map((anchor) => anchor.conviction).join("\n");
+  const anchorsTouchstones = existingAnchors.map((anchor) => anchor.touchstone).join("\n");
+  const hasUnmigratedBondText = legacyConvictions !== anchorsConvictions || legacyTouchstones !== anchorsTouchstones;
+  const splitLines = (value: string) => value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const convictionLines = splitLines(legacyConvictions);
+  const touchstoneLines = splitLines(legacyTouchstones);
+  const humanityAnchors = hasUnmigratedBondText
+    ? Array.from({ length: Math.max(convictionLines.length, touchstoneLines.length, 1) }, (_, index) => ({
+      id: `humanity-anchor-${index + 1}`,
+      conviction: convictionLines[index] ?? "",
+      touchstone: touchstoneLines[index] ?? "",
+    }))
+    : existingAnchors.length ? existingAnchors : defaultCharacter.humanityAnchors;
+  const convictions = humanityAnchors.map((anchor) => anchor.conviction).join("\n");
+  const touchstones = humanityAnchors.map((anchor) => anchor.touchstone).join("\n");
   return {
     ...defaultCharacter,
     ...raw,
@@ -200,6 +223,9 @@ export function migrateCharacter(raw: Partial<Character>): Character {
     attributes: migratedAttributes,
     skills: migratedSkills,
     specialties: migratedSpecialties,
+    humanityAnchors,
+    convictions,
+    touchstones,
     healthMax,
     willpowerMax,
     healthDamage: Array.from({ length: healthMax }, (_, i) => raw.healthDamage?.[i] ?? 0),

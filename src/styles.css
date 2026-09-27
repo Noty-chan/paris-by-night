@@ -265,6 +265,20 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .damage-track p { margin: 10px 0 0; color: #4f524f; font: 7px monospace; text-transform: uppercase; }
 .blood-notes { margin-top: 30px; }
 .discipline-list { display: grid; gap: 12px; }
+.rituals-field { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.rituals-field label { display: block; }
+.rituals-field label > span, .humanity-anchor-row label > span { display: block; color: #777a77; text-transform: uppercase; font: 9px monospace; letter-spacing: .12em; margin-bottom: 7px; }
+.rituals-field label > span small { margin-left: 8px; color: #5f625f; font: 8px monospace; letter-spacing: 0; text-transform: none; }
+.rituals-field textarea, .humanity-anchor-row textarea { resize: vertical; width: 100%; min-height: 68px; border: 1px solid #373a3e; background: #111316; color: #ccc9c1; padding: 12px; outline: none; font: 11px/1.5 monospace; }
+.rituals-field textarea:focus, .humanity-anchor-row textarea:focus { border-color: #696c70; }
+.humanity-anchor-list { display: grid; gap: 10px; margin: 20px 0 30px; }
+.humanity-anchor-intro { display: grid; gap: 5px; margin-bottom: 3px; }
+.humanity-anchor-intro strong { color: #d0ccc3; font: 500 14px Oswald; text-transform: uppercase; letter-spacing: .04em; }
+.humanity-anchor-intro span { color: #777a76; font: 9px/1.5 monospace; }
+.humanity-anchor-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 24px; gap: 14px; align-items: start; padding: 14px; border: 1px solid #303338; background: #111316; }
+.humanity-anchor-row label { min-width: 0; }
+.humanity-anchor-row textarea { min-height: 62px; }
+.humanity-anchor-row .remove-row { margin-top: 22px; }
 .discipline-row { padding: 16px; border: 1px solid #303338; background: #111316; }
 .discipline-main { display: grid; grid-template-columns: minmax(170px, 1fr) auto 24px; align-items: center; gap: 20px; }
 .discipline-main > input, .trait-row > input { width: 100%; padding: 7px 0; color: #ccc9c1; border: 0; border-bottom: 1px solid #44474b; background: transparent; outline: none; }
@@ -280,6 +294,9 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .trait-row + .trait-row { border-top: 0; }
 .trait-row > input { font-size: 9px; }
 .trait-row .compact-select { min-width: 0; font-size: 9px; }
+.trait-name-control { display: grid; min-width: 0; gap: 6px; }
+.trait-name-control > input { width: 100%; padding: 7px 0; color: #ccc9c1; border: 0; border-bottom: 1px solid #44474b; background: transparent; outline: none; font-size: 9px; }
+.trait-name-control > input:focus { border-color: var(--red-bright); }
 .long-notes textarea { min-height: 110px; }
 .experience-row { display: flex; align-items: flex-end; gap: 18px; margin-top: 30px; padding: 18px; border: 1px solid #303338; background: #111316; }
 .experience-row label span { display: block; margin-bottom: 5px; color: #6c6f6b; font: 8px monospace; text-transform: uppercase; }
@@ -931,6 +948,8 @@ footer .legal { text-align: right; }
   .discipline-main .dots { grid-column: 1 / -1; grid-row: 2; }
   .trait-row { grid-template-columns: 1fr 24px; }
   .trait-row .dots, .trait-row > input:nth-of-type(2) { grid-column: 1 / -1; }
+  .humanity-anchor-row { grid-template-columns: 1fr; padding-right: 44px; }
+  .humanity-anchor-row .remove-row { position: absolute; top: 12px; right: 12px; margin: 0; }
   .experience-row { flex-wrap: wrap; }
   .experience-row strong { width: 100%; margin-left: 0; }
   .sheet-roll-dock { left: 10px; right: 10px; bottom: 92px; width: auto; min-height: 64px; grid-template-columns: 1fr 66px 94px; }
