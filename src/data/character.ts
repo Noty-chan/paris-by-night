@@ -110,6 +110,9 @@ const attributes = Object.fromEntries(ATTRIBUTE_GROUPS.flatMap(([, names]) => na
 const skills = Object.fromEntries(SKILL_GROUPS.flatMap(([, names]) => names.map((name) => [name, 0])));
 const specialties = Object.fromEntries(SKILL_GROUPS.flatMap(([, names]) => names.map((name) => [name, ""])));
 
+export const healthFromAttributes = (values: Record<string, number>) => (values["Выносливость"] ?? 1) + 3;
+export const willpowerFromAttributes = (values: Record<string, number>) => (values["Самообладание"] ?? 1) + (values["Упорство"] ?? 1);
+
 export const defaultCharacter: Character = {
   id: "paris-blank-01",
   version: 3,
@@ -188,8 +191,8 @@ export function migrateCharacter(raw: Partial<Character>): Character {
   Object.entries(raw.specialties ?? {}).forEach(([name, value]) => {
     migratedSpecialties[skillAliases[name] ?? name] = value;
   });
-  const healthMax = raw.healthMax ?? (typeof (raw as Record<string, unknown>).health === "number" ? Number((raw as Record<string, unknown>).health) : 4);
-  const willpowerMax = raw.willpowerMax ?? (typeof (raw as Record<string, unknown>).willpower === "number" ? Number((raw as Record<string, unknown>).willpower) : 2);
+  const healthMax = healthFromAttributes(migratedAttributes);
+  const willpowerMax = willpowerFromAttributes(migratedAttributes);
   return {
     ...defaultCharacter,
     ...raw,

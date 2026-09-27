@@ -87,6 +87,7 @@ export function App() {
   const [dice, setDice] = useState<Die[]>([]);
   const [selectedRerolls, setSelectedRerolls] = useState<number[]>([]);
   const [willpowerRerolls, setWillpowerRerolls] = useState(0);
+  const [pursuedDesireLastSession, setPursuedDesireLastSession] = useState(false);
   const [rollId, setRollId] = useState(0);
   const [rollSource, setRollSource] = useState("");
   const [rouseResult, setRouseResult] = useState<number | null>(null);
@@ -116,13 +117,21 @@ export function App() {
     localStorage.setItem("paris-active-player", String(player));
     setActivePlayer(player);
     setCharacter(loadCharacter(player));
+    setDice([]);
+    setSelectedRerolls([]);
+    setWillpowerRerolls(0);
+    setPursuedDesireLastSession(false);
+    setRollSource("");
     setSaved(true);
   };
 
   const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
-  const willpowerSpent = character.willpowerDamage.reduce<number>((sum, mark) => sum + (mark === 2 ? 2 : mark === 1 ? 1 : 0), 0);
+  const willpowerSpent = character.willpowerDamage.filter((mark) => mark !== 0).length;
   const willpowerAvailable = Math.max(0, character.willpowerMax - willpowerSpent);
   const canSpendWillpower = willpowerAvailable > 0 && character.willpowerDamage.includes(0);
+  const canRerollForWillpower = canSpendWillpower && dice.length > 0 && willpowerRerolls === 0;
+  const lightWillpowerRecovery = Math.max(character.attributes["Самообладание"] ?? 0, character.attributes["Упорство"] ?? 0);
+  const canRecoverWillpower = character.willpowerDamage.includes(1) || (pursuedDesireLastSession && character.willpowerDamage.includes(2));
 
   const roll = () => {
     const hungerCount = Math.min(hunger, pool);
@@ -143,14 +152,14 @@ export function App() {
   };
 
   const toggleRerollDie = (index: number) => {
-    if (!canSpendWillpower || dice[index]?.hunger) return;
+    if (!canRerollForWillpower || dice[index]?.hunger) return;
     setSelectedRerolls((current) => current.includes(index)
       ? current.filter((selected) => selected !== index)
       : current.length < 3 ? [...current, index] : current);
   };
 
   const rerollForWillpower = () => {
-    if (!selectedRerolls.length || selectedRerolls.length > 3 || !canSpendWillpower) return;
+    if (!selectedRerolls.length || selectedRerolls.length > 3 || !canRerollForWillpower) return;
     const selected = new Set(selectedRerolls);
     setDice((current) => current.map((die, index) => selected.has(index) && !die.hunger
       ? { ...die, value: Math.floor(Math.random() * 10) + 1 }
@@ -164,6 +173,26 @@ export function App() {
     });
     setSelectedRerolls([]);
     setWillpowerRerolls((current) => current + 1);
+  };
+
+  const restoreWillpower = () => {
+    if (!canRecoverWillpower) return;
+    setCharacter((current) => {
+      const willpowerDamage = [...current.willpowerDamage];
+      let lightStressToClear = Math.max(current.attributes["Самообладание"] ?? 0, current.attributes["Упорство"] ?? 0);
+      for (let index = 0; index < willpowerDamage.length && lightStressToClear > 0; index += 1) {
+        if (willpowerDamage[index] === 1) {
+          willpowerDamage[index] = 0;
+          lightStressToClear -= 1;
+        }
+      }
+      if (pursuedDesireLastSession) {
+        const aggravatedIndex = willpowerDamage.findIndex((mark) => mark === 2);
+        if (aggravatedIndex >= 0) willpowerDamage[aggravatedIndex] = 0;
+      }
+      return { ...current, willpowerDamage };
+    });
+    setPursuedDesireLastSession(false);
   };
 
   const rollRouse = () => {
@@ -318,11 +347,14 @@ export function App() {
                 <span className="panel-label">{rollSource ? `Проверка / ${rollSource}` : "Собрать пул"}</span>
                 <div className="number-controls"><label><span>Всего костей</span><input type="number" min="1" max="20" value={pool} onChange={(e) => setPool(Math.max(1, Math.min(20, +e.target.value)))} /></label><label><span>Голод</span><input type="number" min="0" max="5" value={hunger} onChange={(e) => setHunger(Math.max(0, Math.min(5, +e.target.value)))} /></label><label><span>Сложность</span><input type="number" min="1" max="10" value={difficulty} onChange={(e) => setDifficulty(Math.max(1, Math.min(10, +e.target.value)))} /></label></div>
                 <button className="roll-button" onClick={roll}><span>БРОСИТЬ</span><small>{pool - Math.min(pool, hunger)} обычных + {Math.min(pool, hunger)} голодных</small></button>
-                <div className={`dice-tray ${dice.length ? "rolling" : ""}`} key={`tray-${rollId}`}>{dice.length ? dice.map((die, i) => <div className="die-stage" style={{ animationDelay: `${i * 38}ms` }} key={`${rollId}-${i}-${die.value}`}><DiceFace die={die} selectable={!die.hunger && canSpendWillpower} selected={selectedRerolls.includes(i)} onClick={() => toggleRerollDie(i)} /></div>) : <p>Результат появится здесь</p>}</div>
-                {dice.length > 0 && <div className="willpower-reroll">
-                  <div className="willpower-reroll-copy"><strong>{canSpendWillpower ? selectedRerolls.length ? `Выбрано: ${selectedRerolls.length} из 3` : "Перебросить за Волю" : "Нет доступной Воли"}</strong><span>{willpowerRerolls ? `Уже потрачено на эту проверку: ${willpowerRerolls}. ` : ""}Выбери 1–3 белые кости. Кости Голода нельзя; также нельзя перебрасывать проверки Голода, Человечности и Воли.</span></div>
-                  <button type="button" disabled={!selectedRerolls.length || !canSpendWillpower} onClick={rerollForWillpower}>Перебросить · 1 Воля</button>
-                </div>}
+                <div className={`dice-tray ${dice.length ? "rolling" : ""}`} key={`tray-${rollId}`}>{dice.length ? dice.map((die, i) => <div className="die-stage" style={{ animationDelay: `${i * 38}ms` }} key={`${rollId}-${i}-${die.value}`}><DiceFace die={die} selectable={!die.hunger && canRerollForWillpower} selected={selectedRerolls.includes(i)} onClick={() => toggleRerollDie(i)} /></div>) : <p>Результат появится здесь</p>}</div>
+                <div className="willpower-reroll">
+                  <div className="willpower-reroll-copy"><strong>{willpowerRerolls > 0 ? "Переброс уже использован" : !canSpendWillpower ? "Нет доступной Воли" : selectedRerolls.length ? `Выбрано: ${selectedRerolls.length} из 3` : "Воля / действия"}</strong><span>{dice.length === 0 ? "После броска выбери до трёх белых костей. За одну проверку можно сделать один переброс; кости Голода и проверки Голода, Человечности или Воли перебрасывать нельзя." : "Выбери 1–3 белые кости. Один переброс на проверку; кости Голода и проверки Голода, Человечности или Воли перебрасывать нельзя."}</span><small className="willpower-available">Доступно пунктов Воли: {willpowerAvailable}</small>
+                    <label className="willpower-desire-check"><input type="checkbox" checked={pursuedDesireLastSession} onChange={(event) => setPursuedDesireLastSession(event.target.checked)} /><span>В прошлой встрече активно добивался Желания — можно снять 1 тяжёлый стресс</span></label>
+                  </div>
+                  <div className="willpower-actions"><button type="button" disabled={!selectedRerolls.length || !canRerollForWillpower} onClick={rerollForWillpower}>{willpowerRerolls > 0 ? "Переброс использован" : "Перебросить · 1 Воля"}</button><button type="button" className="restore-willpower" disabled={!canRecoverWillpower} onClick={restoreWillpower}>Восстановить Волю</button></div>
+                  <small className="willpower-recovery-note">В начале встречи восстанавливается лёгкий стресс: количество пунктов равно большему значению Самообладания или Упорства{pursuedDesireLastSession ? "; при условии выше также снимается 1 тяжёлый стресс" : "."}</small>
+                </div>
                 <div className={`result ${result.success ? "success" : ""}`} key={`result-${rollId}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
               </div>
               <aside className="quick-rules panel">

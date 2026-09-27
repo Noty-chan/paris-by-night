@@ -10,11 +10,13 @@ import {
   DisciplineEntry,
   FLAW_NAMES,
   GENERATIONS,
+  healthFromAttributes,
   PREDATOR_TYPES,
   RESONANCES,
   SECT_NAMES,
   SKILL_GROUPS,
   TraitEntry,
+  willpowerFromAttributes,
 } from "../data/character";
 
 type Props = {
@@ -167,11 +169,15 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("identity");
   const set = <K extends keyof Character>(key: K, value: Character[K]) => onChange({ ...character, [key]: value });
-  const baseHealth = (character.attributes.Выносливость ?? 1) + 3;
-  const baseWillpower = (character.attributes.Самообладание ?? 1) + (character.attributes.Упорство ?? 1);
+  const baseHealth = healthFromAttributes(character.attributes);
+  const baseWillpower = willpowerFromAttributes(character.attributes);
   const selectedPool = (selectedAttribute ? character.attributes[selectedAttribute] : 0) + (selectedSkill ? character.skills[selectedSkill] : 0);
-  const setHealthMax = (max: number) => onChange({ ...character, healthMax: max, healthDamage: resizeDamage(character.healthDamage, max) });
-  const setWillpowerMax = (max: number) => onChange({ ...character, willpowerMax: max, willpowerDamage: resizeDamage(character.willpowerDamage, max) });
+  const setAttribute = (name: string, value: number) => {
+    const nextAttributes = { ...character.attributes, [name]: value };
+    const healthMax = healthFromAttributes(nextAttributes);
+    const willpowerMax = willpowerFromAttributes(nextAttributes);
+    onChange({ ...character, attributes: nextAttributes, healthMax, willpowerMax, healthDamage: resizeDamage(character.healthDamage, healthMax), willpowerDamage: resizeDamage(character.willpowerDamage, willpowerMax) });
+  };
   const clanProfile = CLAN_PROFILES.find((clan) => clan.name === character.clan);
   const attributeCounts = [1, 2, 3, 4].map((rating) => Object.values(character.attributes).filter((value) => value === rating).length);
   const attributesValid = attributeCounts.join("/") === "1/4/3/1";
@@ -191,7 +197,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
     { label: "Навыки", ok: skillsValid, text: skillsValid ? "одна из стартовых схем соблюдена" : "выбери схему: специалист, баланс или мастер на все руки" },
     { label: "Дисциплины", ok: disciplineTotal === expectedDisciplineTotal, text: `сейчас ${disciplineTotal}; ${character.predatorType ? "с типом хищника обычно нужно 4" : "до выбора типа хищника нужно 3"}` },
     { label: "Преимущества", ok: advantagesTotal === 7 && flawsTotal >= 2, text: `${advantagesTotal}/7 достоинств · ${flawsTotal}/2+ недостатков` },
-    { label: "Производные", ok: bloodValid, text: bloodValid ? "здоровье и воля рассчитаны" : `здоровье ${baseHealth}, воля ${baseWillpower}: нажми «применить»` },
+    { label: "Производные", ok: bloodValid, text: bloodValid ? "здоровье и воля рассчитаны" : `здоровье ${baseHealth}, воля ${baseWillpower}: проверь атрибуты` },
     { label: "Человечность", ok: humanityValid, text: humanityValid ? "убеждения и опоры связаны" : "добавь хотя бы одно убеждение и связанную с ним опору" },
   ];
   const auditReady = audit.filter((item) => item.ok).length;
@@ -285,7 +291,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
 
       <SectionTitle index="01" title="Атрибуты" hint="1×4 · 3×3 · 4×2 · 1×1" id="attributes" status={attributesValid ? "ok" : "warn"} />
       <div className="attribute-grid">
-        {ATTRIBUTE_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><button type="button" className={`trait-select ${selectedAttribute === attr ? "selected" : ""}`} onClick={() => setSelectedAttribute(selectedAttribute === attr ? null : attr)}>{attr}</button><Dots value={character.attributes[attr]} onChange={(value) => set("attributes", { ...character.attributes, [attr]: value })} /></div>)}</div>)}
+        {ATTRIBUTE_GROUPS.map(([group, attrs]) => <div key={group}><h4>{group}</h4>{attrs.map((attr) => <div className="stat" key={attr}><button type="button" className={`trait-select ${selectedAttribute === attr ? "selected" : ""}`} onClick={() => setSelectedAttribute(selectedAttribute === attr ? null : attr)}>{attr}</button><Dots value={character.attributes[attr]} onChange={(value) => setAttribute(attr, value)} /></div>)}</div>)}
       </div>
 
       <SectionTitle index="02" title="Навыки" hint="Выбери одну из трёх стартовых схем" id="skills" status={skillsValid ? "ok" : "warn"} />
@@ -312,11 +318,11 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
       </div>
       <div className="vitals-grid">
         <div>
-          <div className="derived"><span>Здоровье: Выносливость + 3 = {baseHealth}</span><button type="button" onClick={() => setHealthMax(baseHealth)}>применить</button><input type="number" min="1" max="15" value={character.healthMax} onChange={(event) => setHealthMax(Math.max(1, Math.min(15, Number(event.target.value))))} /></div>
+          <div className="derived"><span>Здоровье: Выносливость + 3 = {baseHealth}</span></div>
           <DamageTrack label="Здоровье" damage={character.healthDamage} onChange={(value) => set("healthDamage", value)} />
         </div>
         <div>
-          <div className="derived"><span>Воля: Самообладание + Упорство = {baseWillpower}</span><button type="button" onClick={() => setWillpowerMax(baseWillpower)}>применить</button><input type="number" min="1" max="15" value={character.willpowerMax} onChange={(event) => setWillpowerMax(Math.max(1, Math.min(15, Number(event.target.value))))} /></div>
+          <div className="derived"><span>Воля: Самообладание + Упорство = {baseWillpower}</span></div>
           <DamageTrack label="Воля" damage={character.willpowerDamage} onChange={(value) => set("willpowerDamage", value)} />
         </div>
       </div>

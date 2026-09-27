@@ -350,13 +350,20 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .die.hunger.critical { background: linear-gradient(145deg, #e03c50, #7d101f); }
 .die.hunger.beast { background: linear-gradient(145deg, #8d1726, #30070d); color: #ffe2d8; }
 .die.beast svg { stroke-width: 3.4; filter: drop-shadow(0 0 5px rgba(255,181,166,.35)); }
-.willpower-reroll { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.willpower-reroll { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 39%); gap: 12px 20px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); }
 .willpower-reroll-copy { display: grid; gap: 5px; }
 .willpower-reroll-copy strong { color: #d0ccc3; font: 500 14px Oswald; text-transform: uppercase; letter-spacing: .04em; }
 .willpower-reroll-copy span { color: #777a76; font: 9px/1.5 monospace; }
-.willpower-reroll > button { min-height: 40px; padding: 0 16px; border: 1px solid #87313d; background: rgba(166,32,49,.15); color: #d39aa0; font: 9px monospace; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: .18s ease; white-space: nowrap; }
-.willpower-reroll > button:not(:disabled):hover { border-color: var(--red-bright); background: rgba(166,32,49,.3); color: #fff; }
-.willpower-reroll > button:disabled { border-color: #323539; background: #131519; color: #555854; cursor: not-allowed; }
+.willpower-available { color: #a49f96; font: 8px monospace; }
+.willpower-desire-check { display: flex; align-items: flex-start; gap: 8px; margin-top: 3px; color: #777a76; font: 8px/1.45 monospace; cursor: pointer; }
+.willpower-desire-check input { flex: 0 0 auto; margin: 1px 0 0; accent-color: var(--red-bright); }
+.willpower-actions { display: grid; grid-template-columns: 1fr; gap: 7px; }
+.willpower-actions button { min-height: 40px; padding: 0 14px; border: 1px solid #87313d; background: rgba(166,32,49,.15); color: #d39aa0; font: 9px monospace; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: .18s ease; }
+.willpower-actions button:not(:disabled):hover { border-color: var(--red-bright); background: rgba(166,32,49,.3); color: #fff; }
+.willpower-actions button:disabled { border-color: #323539; background: #131519; color: #555854; cursor: not-allowed; }
+.willpower-actions button.restore-willpower { border-color: #4c634a; background: rgba(84,117,77,.12); color: #a4bc9f; }
+.willpower-actions button.restore-willpower:not(:disabled):hover { border-color: #8eae8a; background: rgba(84,117,77,.22); color: #dcebd6; }
+.willpower-recovery-note { grid-column: 1 / -1; color: #626560; font: 8px/1.5 monospace; }
 .result { padding-top: 22px; animation: resultReveal .32s .18s ease-out both; }
 @keyframes resultReveal { from { opacity: .25; transform: translateY(5px); } }
 .result small { color: #626460; font: 8px monospace; text-transform: uppercase; }
@@ -938,8 +945,9 @@ footer .legal { text-align: right; }
   .number-controls input { width: 100%; text-align: left; margin-top: 5px; }
   .panel { padding: 21px 17px; }
   .die { width: 51px; height: 51px; }
-  .willpower-reroll { align-items: stretch; flex-direction: column; gap: 12px; }
-  .willpower-reroll > button { width: 100%; }
+  .willpower-reroll { grid-template-columns: 1fr; gap: 12px; }
+  .willpower-actions { grid-template-columns: 1fr; }
+  .willpower-recovery-note { grid-column: auto; }
   .incoming { grid-template-columns: 1fr; gap: 8px; }
   .sheet-audit summary { grid-template-columns: 1fr auto; padding: 0 13px; }
   .sheet-audit summary small { grid-column: 1 / -1; padding-bottom: 10px; text-align: left; }
