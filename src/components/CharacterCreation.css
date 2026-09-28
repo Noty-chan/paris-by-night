@@ -1,3 +1,4 @@
+.creation-mobile-step { display: none; }
 .creation-flow {
   width: 100%;
   max-width: 1120px;
@@ -324,6 +325,10 @@
 .creation-navigation button:disabled { opacity: .35; cursor: default; }
 
 @media (max-width: 720px) {
+  .creation-step-nav { display: none; }
+  .creation-mobile-step { display: grid; gap: 10px; margin: 18px 0; font: 14px/1.5 Inter, Arial, sans-serif; }
+  .creation-mobile-step select { min-height: 46px; padding: 10px; color: #e9e1d3; background: #16181c; border: 1px solid #53555a; font: inherit; width: 100%; }
+  .creation-flow:not([data-step="0"]) .creation-header { display: none; }
   .creation-flow { width: 100%; padding-top: 18px; }
   .creation-header { grid-template-columns: 1fr; gap: 12px; }
   .creation-header > p { max-width: 520px; }

@@ -173,7 +173,7 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
 
   const updateDiscipline = (id: string, patch: Partial<DisciplineEntry>) => setField("disciplines", character.disciplines.map((entry) => entry.id === id ? { ...entry, ...patch } : entry));
   return (
-    <section className="creation-flow" aria-label="Создание персонажа">
+    <section className="creation-flow" aria-label="Создание персонажа" data-step={step}>
       <header className="creation-header">
         <div><span className="creation-kicker">ПОШАГОВЫЙ РЕЖИМ · ТОТ ЖЕ СОХРАНЁННЫЙ ЛИСТ</span><h1>Создание персонажа</h1></div>
         <p>Заполняй в удобном порядке. Изменения сразу передаются листу; готовые пакеты не применяются автоматически.</p>
@@ -182,6 +182,7 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
       <nav className="creation-step-nav" aria-label="Шаги создания">
         {STEPS.map((title, index) => <button type="button" key={title} className={index === step ? "active" : index < step ? "visited" : ""} aria-current={index === step ? "step" : undefined} onClick={() => setStep(index)}><small>0{index + 1}</small><span>{title}</span></button>)}
       </nav>
+      <label className="creation-mobile-step">Шаг создания<select value={step} onChange={(event) => setStep(Number(event.target.value))}>{STEPS.map((title, index) => <option key={title} value={index}>{index + 1} / {STEPS.length} · {title}</option>)}</select></label>
 
       <section className="creation-panel" aria-label="Текущий шаг создания">
         <div className="creation-step-title"><span>ШАГ 0{step + 1} / 07</span><h2>{STEPS[step]}</h2></div>
