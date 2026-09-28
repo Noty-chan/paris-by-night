@@ -287,7 +287,12 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
   }, [activeSection]);
 
   return (
-    <div className="paper sheet full-sheet">
+    <div className="paper sheet full-sheet" onKeyDown={(event) => {
+      const target = event.target as HTMLElement;
+      // Keep typing inside editable fields from reaching page-level shortcuts.
+      // Leave the browser's default editing behavior intact, including Shift and IME.
+      if (target.isContentEditable || target.closest("input, textarea, select")) event.stopPropagation();
+    }}>
       <nav className="sheet-index" aria-label="Разделы листа">
         {SHEET_SECTIONS.map(([id, index, label]) => (
           <a href={`#${id}`} key={id} className={activeSection === id ? "active" : ""} onClick={() => setActiveSection(id)}>
@@ -331,9 +336,9 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
           <div className="skill-group" key={group}>
             <h4>{group}</h4>
             {skills.map((skill) => (
-              <div className="skill-row" key={skill}>
+              <div className={`skill-row${character.specialties[skill]?.trim() ? " has-specialty" : ""}`} key={skill}>
                 <div className="stat"><button type="button" className={`trait-select ${selectedSkill === skill ? "selected" : ""}`} onClick={() => setSelectedSkill(selectedSkill === skill ? null : skill)}>{skill}</button><Dots value={character.skills[skill]} onChange={(value) => set("skills", { ...character.skills, [skill]: value })} /></div>
-                <input aria-label={`Специализация: ${skill}`} placeholder="специализация" value={character.specialties[skill]} onChange={(event) => set("specialties", { ...character.specialties, [skill]: event.target.value })} />
+                <label className="skill-specialty"><span>Специализация · +1 кость</span><input aria-label={`Специализация: ${skill}`} placeholder="Добавить специализацию" value={character.specialties[skill]} onChange={(event) => set("specialties", { ...character.specialties, [skill]: event.target.value })} /></label>
               </div>
             ))}
           </div>

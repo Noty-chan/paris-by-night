@@ -241,8 +241,14 @@ h2 { color: var(--cream); font-size: 42px; text-transform: uppercase; letter-spa
 .skill-columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 .skill-group h4 { color: #777a77; font: 9px monospace; letter-spacing: .13em; text-transform: uppercase; padding-bottom: 9px; border-bottom: 1px solid #34373b; }
 .skill-row { padding: 5px 0 7px; border-bottom: 1px solid #25282b; }
-.skill-row input { width: 100%; margin-top: 3px; padding: 3px 0; color: #777a76; font: 8px monospace; border: 0; border-bottom: 1px solid transparent; background: transparent; outline: none; }
-.skill-row input:focus { color: #b9b6af; border-color: #4b4e52; }
+.skill-specialty { display: block; margin-top: 6px; padding: 7px 9px; border: 1px solid transparent; border-radius: 3px; }
+.skill-specialty > span { display: none; color: #bd9b80; font: 10px/1.4 monospace; }
+.skill-row input { width: 100%; padding: 3px 0; color: var(--cream); font: 600 14px/1.5 Inter, Arial, sans-serif; border: 0; border-bottom: 1px solid transparent; background: transparent; outline: none; }
+.skill-row input::placeholder { color: #85837f; font-weight: 400; font-size: 12px; }
+.skill-row.has-specialty .skill-specialty { background: #211b1b; border-color: #604049; border-left: 3px solid var(--red-bright); }
+.skill-row.has-specialty .skill-specialty > span { display: block; }
+.skill-specialty:focus-within { border-color: #925561; }
+.skill-row input:focus { border-bottom-color: #925561; }
 .blood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 34px; padding: 22px; border: 1px solid #303338; background: #111316; }
 .blood-rating { min-height: 34px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
 .blood-rating > span { color: #aaa8a2; font: 500 11px Oswald; text-transform: uppercase; letter-spacing: .08em; }
