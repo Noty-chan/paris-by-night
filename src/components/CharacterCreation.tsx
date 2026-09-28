@@ -212,9 +212,9 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
         </div>}
 
         {step === 1 && <div>
-          <RuleHelp entry={creationPoints} />
-          <p className="creation-note">Числа принимаются в диапазоне 0–5. Обычный старт Core предлагает 1×4, 3×3, 4×2 и 1×1; это подсказка, не автоматическая проверка RAW. Для анциллы сверяй схему вручную.</p>
+          <p className="creation-note">Обычный старт: 1×4 · 3×3 · 4×2 · 1×1.</p>
           {ATTRIBUTE_GROUPS.map(([group, names]) => <section className="creation-score-group" key={group}><h3>{group}</h3><div className="creation-score-grid">{names.map(attributeField)}</div></section>)}
+          <details className="creation-help"><summary>Как распределить характеристики</summary><p>Диапазон редактора — 0–5, но обычная стартовая схема не допускает 0 или 5. Одна характеристика на 4, три на 3, четыре на 2 и одна на 1. Нестандартное создание согласуйте с ведущим.</p><a href="#guide/creation/creation-points">Правила распределения · основная книга, с. 136 →</a></details>
           <p className="creation-counts"><b>Core:</b> {creationPoints?.paragraphs[0]} <br /><b>Сейчас:</b> {ratingCounts(allAttributeValues)}</p>
           <p className="creation-derived">Здоровье: <b>{character.healthMax}</b> · Воля: <b>{character.willpowerMax}</b>. Производные шкалы пересчитаны, существующие отметки урона сохранены.</p>
         </div>}
