@@ -192,7 +192,7 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
       <nav className="creation-step-nav" aria-label="Шаги создания">
         {STEPS.map((title, index) => <button type="button" key={title} className={index === step ? "active" : index < step ? "visited" : ""} aria-current={index === step ? "step" : undefined} onClick={() => setStep(index)}><small>0{index + 1}</small><span>{title}</span></button>)}
       </nav>
-      <label className="creation-mobile-step">Шаг создания<select value={step} onChange={(event) => setStep(Number(event.target.value))}>{STEPS.map((title, index) => <option key={title} value={index}>{index + 1} / {STEPS.length} · {title}</option>)}</select></label>
+      <label className="creation-mobile-step">Шаг создания<select aria-label="Шаг создания" value={step} onChange={(event) => setStep(Number(event.target.value))}>{STEPS.map((title, index) => <option key={title} value={index}>{index + 1} / {STEPS.length} · {title}</option>)}</select></label>
 
       <section className="creation-panel" aria-label="Текущий шаг создания">
         <div className="creation-step-title"><span>ШАГ 0{step + 1} / 07</span><h2>{STEPS[step]}</h2></div>
