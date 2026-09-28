@@ -8,6 +8,21 @@ export function parseCreationScore(raw: string, min = 0, max = 5): number | null
   return Number.isSafeInteger(value) && value >= min && value <= max ? value : null;
 }
 
+/** Compare a base distribution, not XP, predator or historical additions. Zero is unassigned. */
+export function distributionIssues(values: number[], pattern: string): string[] {
+  const expected = new Map<number, number>();
+  for (const match of Array.from(pattern.matchAll(/(\d+)\s*×\s*(\d+)/g))) expected.set(Number(match[2]), Number(match[1]));
+  if (!expected.size) return ["Схема не выбрана."];
+  const issues: string[] = [];
+  for (let rating = 1; rating <= 5; rating++) {
+    const wanted = expected.get(rating) ?? 0;
+    const actual = values.filter((value) => value === rating).length;
+    if (actual < wanted) issues.push(`На ${rating}: ещё ${wanted - actual}.`);
+    if (actual > wanted) issues.push(`На ${rating}: лишних ${actual - wanted}.`);
+  }
+  return issues;
+}
+
 export function updateCreationAttribute(character: Character, name: string, value: number): Character {
   if (!Number.isInteger(value) || value < 0 || value > 5) return character;
   return migrateCharacter({ ...character, attributes: { ...character.attributes, [name]: value } });

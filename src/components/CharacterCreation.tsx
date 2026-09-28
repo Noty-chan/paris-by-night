@@ -13,7 +13,7 @@ import { CORE_CLAN_PROFILES } from "../data/rulebookClans";
 import { basicsSection, creationSection } from "../data/rulebookBasics";
 import { predatorsSection } from "../data/rulebookPredators";
 import { VERIFIED_ADVANTAGE_NAMES, VERIFIED_FLAW_NAMES } from "../data/rulebookTraits";
-import { parseCreationScore, suggestClanDisciplines, updateCreationAttribute, updateCreationSkill } from "../lib/creation";
+import { distributionIssues, parseCreationScore, suggestClanDisciplines, updateCreationAttribute, updateCreationSkill } from "../lib/creation";
 import "./CharacterCreation.css";
 
 type Props = {
@@ -63,11 +63,16 @@ function ScoreField({
   onChange: (raw: string) => void; onBlur: () => void;
 }) {
   return (
-    <label className="creation-score">
-      <span>{label}</span>
-      <input id={id} aria-label={label} aria-invalid={Boolean(error)} type="number" inputMode="numeric" min={0} max={5} step={1} value={draft ?? value} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} />
+    <div className="creation-score">
+      <label htmlFor={id}>{label}</label>
+      <div className="creation-score-controls" role="group" aria-label={`${label}: изменение значения`}>
+        <button type="button" aria-label={`${label}: уменьшить на 1`} disabled={value <= 0} onClick={() => onChange(String(Math.max(0, value - 1)))}>−</button>
+        <button type="button" className="creation-score-value" aria-label={`${label}: ${value}, увеличить на 1`} disabled={value >= 5} onClick={() => onChange(String(Math.min(5, value + 1)))}>{value}</button>
+        <button type="button" className="creation-score-reset" aria-label={`${label}: сбросить на 0`} title="Сбросить на 0" disabled={value === 0 && !error} onClick={() => onChange("0")}>↺</button>
+      </div>
+      <details className="creation-score-manual"><summary>Ввести число</summary><input id={id} aria-label={label} aria-invalid={Boolean(error)} type="number" inputMode="numeric" min={0} max={5} step={1} value={draft ?? value} onChange={(event) => onChange(event.target.value)} onBlur={onBlur} /></details>
       {error && <small role="alert">{error}</small>}
-    </label>
+    </div>
   );
 }
 
@@ -161,6 +166,18 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
   const skillNames = SKILL_GROUPS.find(([category]) => category === skillCategory)?.[1] ?? [];
   const allSkillValues = SKILL_GROUPS.flatMap(([, names]) => names.map((name) => character.skills[name] ?? 0));
   const allAttributeValues = ATTRIBUTE_GROUPS.flatMap(([, names]) => names.map((name) => character.attributes[name] ?? 0));
+  const attributeIssues = distributionIssues(allAttributeValues, "1×4, 3×3, 4×2, 1×1");
+  const skillIssues = distributionIssues(allSkillValues, SKILL_SCHEMES.find((item) => item.id === scheme)?.pattern ?? "");
+  const reviewItems = [
+    !character.name.trim() && "Запиши имя персонажа.",
+    !character.concept.trim() && "Запиши концепцию.",
+    (!character.clan || character.clan === "Не определён") && "Выбери клан или согласуй бескланового персонажа.",
+    attributeIssues.length > 0 && `Характеристики не совпадают с обычной стартовой схемой: ${attributeIssues.join(" ")}`,
+    skillIssues.length > 0 && `Навыки не совпадают с выбранной базовой схемой: ${skillIssues.join(" ")}`,
+    !character.disciplines.some((entry) => entry.rating > 0) && "Распредели Дисциплины либо согласуй исключение с ведущим.",
+    character.disciplines.some((entry) => entry.rating > 0 && !entry.powers.trim()) && "У Дисциплины с точками не записаны силы.",
+    (!character.humanityAnchors.length || character.humanityAnchors.some((entry) => !entry.conviction.trim() || !entry.touchstone.trim())) && "Заполни обе части каждой пары: Опору и Убеждение.",
+  ].filter((item): item is string => Boolean(item));
 
   const selectedClan = CORE_CLAN_PROFILES.find((profile) => profile.name === character.clan);
   const selectedPredator = predatorsSection.entries.find((entry) => entry.title === character.predatorType);
@@ -213,6 +230,8 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
 
         {step === 1 && <div>
           <p className="creation-note">Обычный старт: 1×4 · 3×3 · 4×2 · 1×1.</p>
+          <p className="creation-distribution" role="status">{attributeIssues.length ? attributeIssues.join(" ") : "✓ Распределение соответствует обычному старту."}</p>
+          <p className="creation-tap-hint">Тап по цифре: +1 · слева: −1 · ↺: сброс на 0.</p>
           {ATTRIBUTE_GROUPS.map(([group, names]) => <section className="creation-score-group" key={group}><h3>{group}</h3><div className="creation-score-grid">{names.map(attributeField)}</div></section>)}
           <details className="creation-help"><summary>Как распределить характеристики</summary><p>Диапазон редактора — 0–5, но обычная стартовая схема не допускает 0 или 5. Одна характеристика на 4, три на 3, четыре на 2 и одна на 1. Нестандартное создание согласуйте с ведущим.</p><a href="#guide/creation/creation-points">Правила распределения · основная книга, с. 136 →</a></details>
           <p className="creation-counts"><b>Core:</b> {creationPoints?.paragraphs[0]} <br /><b>Сейчас:</b> {ratingCounts(allAttributeValues)}</p>
@@ -223,6 +242,7 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
           <p className="creation-note">Схема только подсказывает стартовый пакет навыков: точки не распределяются автоматически. Числовые значения — 0–5; оставляй свои и нестандартные навыки как есть.</p>
           <label className="creation-field creation-scheme"><span>Схема навыков для подсказки</span><select value={scheme} onChange={(event) => setScheme(event.target.value)}>{SKILL_SCHEMES.map((item) => <option value={item.id} key={item.id}>{item.title} · {item.pattern}</option>)}</select></label>
           <p className="creation-counts"><b>Выбрано:</b> {SKILL_SCHEMES.find((item) => item.id === scheme)?.pattern ?? "схема не задана"} · <b>Сейчас (0–5):</b> {ratingCounts(allSkillValues)}. Сравнение — подсказка, ничего не распределяется.</p>
+          <p className="creation-distribution" role="status">{skillIssues.length ? skillIssues.join(" ") : "✓ Базовое распределение навыков совпадает."} Добавки охоты, эпох и опыта сюда не включены.</p>
           <div className="creation-tabs" role="tablist" aria-label="Категория навыков">{SKILL_GROUPS.map(([category]) => <button type="button" role="tab" aria-selected={skillCategory === category} className={skillCategory === category ? "active" : ""} key={category} onClick={() => setSkillCategory(category)}>{category}</button>)}</div>
           <div className="creation-skill-grid">{skillNames.map((name) => {
             const key = `skill:${name}`;
@@ -277,6 +297,7 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
         </div>}
 
         {step === 6 && <div className="creation-stack">
+          <section className="creation-card creation-review"><h3>Что ещё проверить</h3><p className="creation-note">Сравниваем с базовым стартом. Дополнительные точки и настройки хроники могут объяснять отличия; переходы не заблокированы.</p>{reviewItems.length ? <ul>{reviewItems.map((item) => <li key={item}>{item}</li>)}</ul> : <p>Основные поля заполнены, базовые схемы совпадают. Это не полная проверка правил.</p>}<p>Вручную: пакет охоты, бюджет преимуществ и недостатков, условия выбранных сил, возраст и Океаны Времени.</p></section>
           <div className="creation-summary-grid">
             <section><span>Персонаж</span><b>{character.name || "Без имени"}</b><p>{character.concept || "Концепция не записана"}</p></section>
             <section><span>Клан / поколение</span><b>{character.clan || "Не выбран"} · {character.generation || "—"}</b><p>{selectedClan?.disciplines.join(" · ") || "Клановые Дисциплины сверяются вручную"}</p></section>

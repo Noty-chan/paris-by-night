@@ -18,7 +18,7 @@ async function moduleURL(url) {
   return result;
 }
 
-const { parseCreationScore, suggestClanDisciplines, updateCreationAttribute, updateCreationSkill } = await import(await moduleURL(new URL('../src/lib/creation.ts', import.meta.url)));
+const { distributionIssues, parseCreationScore, suggestClanDisciplines, updateCreationAttribute, updateCreationSkill } = await import(await moduleURL(new URL('../src/lib/creation.ts', import.meta.url)));
 const { defaultCharacter } = await import(await moduleURL(new URL('../src/data/character.ts', import.meta.url)));
 const { CORE_CLAN_PROFILES } = await import(await moduleURL(new URL('../src/data/rulebookClans.ts', import.meta.url)));
 
@@ -26,6 +26,13 @@ test('creation scores accept only integer ratings from zero through five', () =>
   assert.equal(parseCreationScore('0'), 0);
   assert.equal(parseCreationScore('5'), 5);
   for (const value of ['', '-1', '6', '2.5', '3x']) assert.equal(parseCreationScore(value), null, value);
+});
+
+test('base distribution reports missing and excess ratings without counting unassigned zeroes', () => {
+  assert.deepEqual(distributionIssues([4, 3, 3, 3, 2, 2, 2, 2, 1], '1×4, 3×3, 4×2, 1×1'), []);
+  assert.deepEqual(distributionIssues([3, 2, 2, 0], '1×3, 2×2'), []);
+  assert.ok(distributionIssues([5, 0], '1×4').includes('На 4: ещё 1.'));
+  assert.ok(distributionIssues([5, 0], '1×4').includes('На 5: лишних 1.'));
 });
 
 test('clan suggestion preserves named powers and unknown disciplines', () => {
