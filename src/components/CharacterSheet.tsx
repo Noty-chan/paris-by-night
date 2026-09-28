@@ -338,7 +338,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
             {skills.map((skill) => (
               <div className={`skill-row${character.specialties[skill]?.trim() ? " has-specialty" : ""}`} key={skill}>
                 <div className="stat"><button type="button" className={`trait-select ${selectedSkill === skill ? "selected" : ""}`} onClick={() => setSelectedSkill(selectedSkill === skill ? null : skill)}>{skill}</button><Dots value={character.skills[skill]} onChange={(value) => set("skills", { ...character.skills, [skill]: value })} /></div>
-                <label className="skill-specialty"><span>Специализация · +1 кость</span><input aria-label={`Специализация: ${skill}`} placeholder="Добавить специализацию" value={character.specialties[skill]} onChange={(event) => set("specialties", { ...character.specialties, [skill]: event.target.value })} /></label>
+                <input aria-label={`Специализация: ${skill}`} title="Подходящая специализация даёт +1 кость к броску" placeholder="Специализация" value={character.specialties[skill]} onChange={(event) => set("specialties", { ...character.specialties, [skill]: event.target.value })} />
               </div>
             ))}
           </div>
