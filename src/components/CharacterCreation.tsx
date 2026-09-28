@@ -125,6 +125,16 @@ export function CharacterCreation({ character, onChange, onOpenSheet }: Props) {
   const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    const syncStep = () => {
+      const match = window.location.hash.match(/^#create\/([0-6])$/);
+      if (match) setStep(Number(match[1]));
+      else if (window.location.hash === "#create") setStep(0);
+    };
+    window.addEventListener("hashchange", syncStep);
+    return () => window.removeEventListener("hashchange", syncStep);
+  }, []);
+
+  useEffect(() => {
     window.history.replaceState(window.history.state, "", `#create/${step}`);
     document.querySelector("main")?.scrollTo({ top: 0, behavior: "auto" });
   }, [step]);
