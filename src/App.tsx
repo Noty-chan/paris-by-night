@@ -6,10 +6,11 @@ import { FactionsPage } from "./components/FactionsPage";
 import { DomainPage } from "./components/DomainPage";
 import { RelationsPage } from "./components/RelationsPage";
 import { RulebookPage } from "./components/RulebookPage";
+import { CharacterCreation } from "./components/CharacterCreation";
 import { interpretDice, type Die } from "./lib/dice";
 import { importWod5Pdf } from "./lib/wod5PdfImport";
 
-type Tab = "home" | "city" | "pedia" | "factions" | "domain" | "relations" | "characters" | "dice" | "guide";
+type Tab = "home" | "city" | "pedia" | "factions" | "domain" | "relations" | "characters" | "dice" | "guide" | "create";
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
@@ -21,6 +22,7 @@ const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "characters", label: "Персонажи", index: "06" },
   { id: "dice", label: "Броски", index: "07" },
   { id: "guide", label: "Справочник", index: "08" },
+  { id: "create", label: "Создание", index: "09" },
 ];
 
 const CITY_PHOTOS = [
@@ -65,7 +67,7 @@ function DiceFace({ die, selectable = false, selected = false, onClick }: { die:
 
 
 export function App() {
-  const [tab, setTab] = useState<Tab>(() => location.hash.startsWith("#guide") ? "guide" : "home");
+  const [tab, setTab] = useState<Tab>(() => NAV.find((item) => item.id === location.hash.slice(1).split("/")[0])?.id ?? "home");
   const [activePlayer, setActivePlayer] = useState(loadActivePlayer);
   const [character, setCharacter] = useState<Character>(() => loadCharacter(activePlayer));
   const [saved, setSaved] = useState(true);
@@ -85,7 +87,7 @@ export function App() {
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const onHash = () => { if (location.hash.startsWith("#guide")) setTab("guide"); };
+    const onHash = () => { const target = NAV.find((item) => item.id === location.hash.slice(1).split("/")[0]); if (target) setTab(target.id); };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -244,7 +246,7 @@ export function App() {
 
       <aside className="sidebar">
         <nav aria-label="Основная навигация">
-          {NAV.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}><small>{item.index}</small>{item.label}</button>)}
+          {NAV.map((item) => <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => { setTab(item.id); window.history.replaceState(null, "", item.id === "guide" ? "#guide" : `#${item.id}`); }}><small>{item.index}</small>{item.label}</button>)}
         </nav>
         <div className="side-note"><span>архив</span><strong>PAR–04</strong><p>Неофициальный помощник хроники. Доступ зарегистрирован.</p></div>
       </aside>
@@ -320,6 +322,7 @@ export function App() {
         )}
 
         {tab === "guide" && <RulebookPage />}
+        {tab === "create" && <section className="page creation-page"><div className="page-head"><div><div className="eyebrow">Сборка досье / текущий локальный лист</div><h2>Создание</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div><label className="creation-slot-label">Лист игрока<select value={activePlayer} onChange={(event) => selectPlayer(Number(event.target.value))}>{[1, 2, 3, 4].map((player) => <option key={player} value={player}>Игрок {player}{player === activePlayer ? ` · ${character.name}` : ""}</option>)}</select></label><CharacterCreation key={activePlayer} character={character} onChange={setCharacter} onOpenSheet={() => { location.hash = "characters"; setTab("characters"); }} /></section>}
         {tab === "pedia" && <EncyclopediaPage />}
 
         {tab === "factions" && <FactionsPage />}
@@ -331,6 +334,7 @@ export function App() {
             <div className="page-head"><div><div className="eyebrow">Досье игроков / локальные копии</div><h2>Персонажи</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
             <div className="player-slot-bar" aria-label="Листы персонажей игроков">{[1, 2, 3, 4].map((player) => <button type="button" key={player} className={activePlayer === player ? "active" : ""} onClick={() => selectPlayer(player)}><small>ЛИСТ / 0{player}</small><strong>{player === activePlayer ? character.name || "Без имени" : `Игрок ${player}`}</strong><i>{activePlayer === player ? `${character.clan} · ${character.concept}` : "Открыть досье"}</i></button>)}</div>
             <div className="characters-local-note"><span>ЭТОТ БРАУЗЕР</span><p>У каждого игрока свои локальные данные. Выбери слот, чтобы вести отдельный лист; для переноса между устройствами используй экспорт и импорт JSON.</p></div>
+            <a className="rulebook-create-link" href="#create">Заполнять этот лист пошагово →</a>
             <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт JSON</button><button onClick={() => wod5PdfImportRef.current?.click()}>Импорт PDF</button><input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => { void importSheet(event.target.files?.[0]); event.target.value = ""; }} /><input ref={wod5PdfImportRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { void importWod5Sheet(event.target.files?.[0]); event.target.value = ""; }} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист этого игрока?") && setCharacter(migrateCharacter(defaultCharacter))}>Сбросить этот лист</button></div>
             <CharacterSheet character={character} onChange={setCharacter} onPrepareRoll={prepareRoll} />
           </section>

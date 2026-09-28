@@ -1171,3 +1171,26 @@ footer .legal { text-align: right; }
 .rulebook-table th, .rulebook-table td { border: 1px solid #4a4c51; padding: 10px 12px; vertical-align: top; min-width: 110px; }
 .rulebook-table th { color: #ece9e1; background: #202228; }
 @media (max-width: 650px) { .rulebook-card summary { flex-direction: column; align-items: flex-start; padding: 16px; gap: 10px; } .rulebook-card summary small { flex-basis: auto; } .rulebook-content { padding: 0 16px 18px; } .rulebook-controls { padding: 14px; } .rulebook-controls nav a { padding: 10px; } }
+.rulebook-mobile-section { display: none !important; }
+.rulebook-scope summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: #aaa89f; font-size: 14px; }
+.rulebook-scope summary::before { content: "+"; margin-right: 10px; }
+.rulebook-scope[open] summary::before { content: "−"; }
+.creation-slot-label { display: grid; gap: 10px; margin-bottom: 18px; color: #d0cec7; }
+.creation-page .page-head h2 { display: none; }
+.creation-page .page-head { margin-bottom: 16px; padding-bottom: 14px; align-items: center; gap: 12px; }
+.creation-page .creation-navigation { position: sticky; bottom: 0; z-index: 3; padding: 12px 0; background: #111317; }
+.creation-slot-label select { min-height: 46px; padding: 10px; font: inherit; color: #dedbd2; background: #15171a; border: 1px solid #53555a; width: 100%; }
+.rulebook-controls select { width: 100%; min-height: 46px; background: #15171a; color: var(--text, #dedbd2); border: 1px solid #53555a; padding: 10px; font: inherit; }
+.rulebook-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin: 22px 0; flex-wrap: wrap; color: #aaa89f; font-size: 14px; }
+.rulebook-pagination button { min-height: 44px; padding: 10px 16px; border: 1px solid #55565c; color: #e4dfd4; background: #17191d; font: inherit; cursor: pointer; }
+.rulebook-pagination button:disabled { opacity: .4; cursor: default; }
+.rulebook-pagination > span:first-child { margin-right: auto; }
+.rulebook-create-link { display: block; border: 1px solid #a62343; padding: 18px; margin: 20px 0; color: #e6dfd4; background: #32121d; text-decoration: none; }
+@media (max-width: 640px) {
+  .creation-page .page-head { flex-direction: column; align-items: flex-start; }
+  .rulebook-mobile-section { display: grid !important; }
+  .rulebook-controls nav { display: none; }
+  .rulebook-pagination { gap: 8px; justify-content: space-between; }
+  .rulebook-pagination > span:first-child { flex-basis: 100%; }
+  .rulebook-card summary { padding: 16px; }
+}
