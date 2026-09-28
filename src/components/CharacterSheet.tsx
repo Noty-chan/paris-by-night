@@ -36,7 +36,7 @@ const SHEET_SECTIONS = [
   ["advantages", "05", "Преимущества"],
   ["humanity", "06", "Человечность"],
   ["story", "07", "История"],
-  ["wod5", "08", "PDF WOD5"],
+  ["wod5", "08", "PDF"],
 ] as const;
 
 function Dots({ value, max = 5, onChange }: { value: number; max?: number; onChange: (n: number) => void }) {
@@ -65,14 +65,16 @@ function Field({ label, value, onChange, hint }: { label: string; value: string;
 }
 
 function ChoiceField({ label, value, options, onChange, hint }: { label: string; value: string; options: readonly string[]; onChange: (v: string) => void; hint?: string }) {
-  const selectedValue = options.includes(value) ? value : value && options.includes("Другое / домашняя версия") ? "Другое / домашняя версия" : "";
+  const selectedValue = value;
   return (
     <label className="field choice-field">
       <span>{label}{hint && <i className="field-help" title={hint}>?</i>}</span>
       <select value={selectedValue} onChange={(event) => onChange(event.target.value)}>
         <option value="">Выбрать…</option>
+        {value && !options.includes(value) && <option value={value}>{value} · своя / прежняя запись</option>}
         {options.map((option) => <option value={option} key={option}>{option}</option>)}
       </select>
+      {label === "Тип хищника" && value && options.includes(value) && value !== "Другое / домашняя версия" && <a className="book-help-link" href={`#guide/predators/search:${encodeURIComponent(value)}`}>Пакет из книги →</a>}
     </label>
   );
 }
@@ -131,6 +133,7 @@ function TraitList({ title, entries, options, onChange }: { title: string; entri
               <option value="__custom__">Своё название…</option>
             </select>
             {entry.name && (entry.name === "Другое" || !options.includes(entry.name)) && <input aria-label={`${title}: своё название`} placeholder="Введите своё название" value={entry.name === "Другое" ? "" : entry.name} onChange={(event) => update(entry.id, { name: event.target.value || "Другое" })} />}
+            {entry.name && options.includes(entry.name) && entry.name !== "Другое" && <a className="book-help-link" href={`#guide/${title === "Недостатки" ? "flaws" : "advantages"}/search:${encodeURIComponent(entry.name)}`}>Описание из книги →</a>}
           </div>
           <Dots value={entry.rating} onChange={(rating) => update(entry.id, { rating })} />
           <input aria-label={`${title}: уточнение`} placeholder="Уточнение или источник" value={entry.note} onChange={(event) => update(entry.id, { note: event.target.value })} />
@@ -148,7 +151,7 @@ function HumanityAnchorList({ entries, onChange }: { entries: HumanityAnchor[]; 
       <div className="humanity-anchor-intro"><strong>Убеждение и опора связаны</strong><span>Запиши каждую пару отдельно: кого или что персонаж считает важным — и какое убеждение эта связь поддерживает.</span></div>
       {entries.map((entry, index) => (
         <div className="humanity-anchor-row" key={entry.id}>
-          <label><span>Опора {index + 1}</span><textarea rows={2} value={entry.touchstone} onChange={(event) => update(entry.id, { touchstone: event.target.value })} placeholder="Человек, группа или обязательство" /></label>
+          <label><span>Опора {index + 1}</span><textarea rows={2} value={entry.touchstone} onChange={(event) => update(entry.id, { touchstone: event.target.value })} placeholder="Живой человек, воплощающий принцип" /></label>
           <label><span>Убеждение {index + 1}</span><textarea rows={2} value={entry.conviction} onChange={(event) => update(entry.id, { conviction: event.target.value })} placeholder="Принцип, который эта связь удерживает" /></label>
           <button type="button" className="remove-row" onClick={() => onChange(entries.filter((item) => item.id !== entry.id))} aria-label={`Удалить пару ${index + 1}`}>×</button>
         </div>
@@ -165,11 +168,12 @@ function DisciplineList({ entries, onChange }: { entries: DisciplineEntry[]; onC
       {entries.map((entry) => (
         <div className="discipline-row" key={entry.id}>
           <div className="discipline-main">
-            <select className="compact-select" aria-label="Название дисциплины" value={DISCIPLINE_NAMES.includes(entry.name) ? entry.name : ""} onChange={(event) => update(entry.id, { name: event.target.value })}><option value="">Выбрать дисциплину…</option>{DISCIPLINE_NAMES.map((name) => <option value={name} key={name}>{name}</option>)}</select>
+            <select className="compact-select" aria-label="Название дисциплины" value={entry.name} onChange={(event) => update(entry.id, { name: event.target.value })}><option value="">Выбрать дисциплину…</option>{entry.name && !DISCIPLINE_NAMES.includes(entry.name) && <option value={entry.name}>{entry.name} · своя / прежняя запись</option>}{DISCIPLINE_NAMES.map((name) => <option value={name} key={name}>{name}</option>)}</select>
             <Dots value={entry.rating} onChange={(rating) => update(entry.id, { rating })} />
             <button type="button" className="remove-row" onClick={() => onChange(entries.filter((item) => item.id !== entry.id))} aria-label="Удалить дисциплину">×</button>
           </div>
           <textarea aria-label="Силы дисциплины" placeholder="Изученные силы, амальгамы, ритуалы…" value={entry.powers} onChange={(event) => update(entry.id, { powers: event.target.value })} />
+          {entry.name && DISCIPLINE_NAMES.includes(entry.name) && <a className="book-help-link" href={`#guide/disciplines/search:${encodeURIComponent(entry.name)}`}>Силы и правила из книги →</a>}
         </div>
       ))}
       <button type="button" className="add-row" onClick={() => onChange([...entries, { id: uid("discipline"), name: "", rating: 0, powers: "" }])}>+ добавить дисциплину</button>
@@ -180,11 +184,11 @@ function DisciplineList({ entries, onChange }: { entries: DisciplineEntry[]; onC
 function Wod5Compatibility({ fields, onChange }: { fields: Record<string, string>; onChange: (fields: Record<string, string>) => void }) {
   const [query, setQuery] = useState("");
   const entries = Object.entries(fields).filter(([name]) => name.toLowerCase().includes(query.toLowerCase()));
-  if (!Object.keys(fields).length) return <div className="wod5-compat empty"><strong>PDF WOD5 ещё не импортирован</strong><p>Кнопка «Импорт PDF WOD5» наверху листа прочитает заполняемый PDF из конструктора и сохранит все его поля локально.</p></div>;
+  if (!Object.keys(fields).length) return <div className="wod5-compat empty"><strong>PDF ещё не импортирован</strong><p>Кнопка «Импорт PDF» прочитает прежний заполняемый двухстраничный лист и сохранит все его поля локально. Это совместимость формата, не проверка правильности его правил.</p></div>;
   return (
     <details className="wod5-compat">
       <summary><span>Совместимые данные</span><strong>{Object.keys(fields).length} / 413 полей сохранены</strong><small>основные поля редактируются выше; здесь — полный архив PDF</small></summary>
-      <div className="wod5-compat-body"><p>Все значения из исходного PDF сохранены в листе, включая отдельные точки, клетки и поля, которых нет в удобной версии. Их можно найти и исправить здесь; для обычной игры пользуйся разделами листа выше.</p><input aria-label="Поиск поля PDF WOD5" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти поле: dot211, bane, features…" /><div className="wod5-field-grid">{entries.map(([name, value]) => <label key={name}><span>{name}</span>{value.includes("\n") || value.length > 90 ? <textarea value={value} onChange={(event) => onChange({ ...fields, [name]: event.target.value })} /> : <input value={value} onChange={(event) => onChange({ ...fields, [name]: event.target.value })} />}</label>)}</div></div>
+      <div className="wod5-compat-body"><p>Все значения из исходного PDF сохранены в листе, включая отдельные точки, клетки и поля, которых нет в удобной версии. Их можно найти и исправить здесь; для обычной игры пользуйся разделами листа выше.</p><input aria-label="Поиск поля PDF" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти поле: dot211, bane, features…" /><div className="wod5-field-grid">{entries.map(([name, value]) => <label key={name}><span>{name}</span>{value.includes("\n") || value.length > 90 ? <textarea value={value} onChange={(event) => onChange({ ...fields, [name]: event.target.value })} /> : <input value={value} onChange={(event) => onChange({ ...fields, [name]: event.target.value })} />}</label>)}</div></div>
     </details>
   );
 }
@@ -239,7 +243,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
     const clanDisciplines = clanProfile.disciplines.map((name, index) => existing.get(name) ?? { id: uid(`clan-${index}`), name, rating: 0, powers: "" });
     const extraDisciplines = character.disciplines.filter((entry) => entry.name && !clanProfile.disciplines.includes(entry.name));
     const disciplines = clanProfile.disciplines.length ? [...clanDisciplines, ...extraDisciplines] : character.disciplines;
-    onChange({ ...character, sect: clanProfile.usualSect, clanBane: clanProfile.bane, disciplines });
+    onChange({ ...character, clanBane: clanProfile.bane, disciplines });
   };
 
   useEffect(() => {
@@ -303,7 +307,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
       </nav>
 
       <details className={`sheet-audit ${auditReady === audit.length ? "complete" : ""}`} open={auditReady < 3}>
-        <summary><span>Проверка создания</span><strong>{auditReady}/{audit.length}</strong><small>{auditReady === audit.length ? "основа листа готова" : "это подсказки, не запреты"}</small></summary>
+        <summary><span>Обычный старт / основная книга</span><strong>{auditReady}/{audit.length}</strong><small>Подсказки, не проверка анциллы In Memoriam</small></summary>
         <div>{audit.map((item) => <p className={item.ok ? "ok" : "warn"} key={item.label}><i>{item.ok ? "✓" : "!"}</i><b>{item.label}</b><span>{item.text}</span></p>)}</div>
       </details>
 
@@ -313,13 +317,13 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
         <Field label="Концепция" hint="Короткая формула: кем был, чего хочет и чем опасен." value={character.concept} onChange={(value) => set("concept", value)} />
         <Field label="Игрок" value={character.player} onChange={(value) => set("player", value)} />
         <Field label="Хроника" value={character.chronicle} onChange={(value) => set("chronicle", value)} />
-        <ChoiceField label="Клан" hint="Кровное наследие: три Дисциплины, проклятие и принуждение." value={character.clan} options={CLAN_NAMES} onChange={(value) => set("clan", value)} />
+        <ChoiceField label="Клан" hint="Кровное наследие. Здесь проверены кланы основной книги; свой клан можно сохранить как отдельную запись." value={character.clan} options={CLAN_NAMES} onChange={(value) => set("clan", value)} />
         <ChoiceField label="Секта" hint="Политическая принадлежность — это выбор, а не свойство клана." value={character.sect} options={SECT_NAMES} onChange={(value) => set("sect", value)} />
         <Field label="Сир" value={character.sire} onChange={(value) => set("sire", value)} />
         <ChoiceField label="Поколение" hint="Обычный птенец или неонат — 12–13 поколение." value={character.generation} options={GENERATIONS} onChange={(value) => set("generation", value)} />
         <ChoiceField label="Тип хищника" hint="Устойчивая привычка охоты; даёт специализацию, Дисциплину и особенности." value={character.predatorType} options={PREDATOR_TYPES} onChange={(value) => set("predatorType", value)} />
       </div>
-      {clanProfile && <div className="clan-helper"><div><small>Каноническая основа</small><strong>{clanProfile.name} · {clanProfile.epithet}</strong><p>{clanProfile.disciplines.join(" · ")}<br />Обычная принадлежность: {clanProfile.usualSect}</p></div><button type="button" onClick={applyClanFoundation}>Подставить основу</button><span>Заполнит названия Дисциплин, проклятие и обычную секту. Точки и парижские отклонения остаются за вами.</span></div>}
+      {clanProfile && <div className="clan-helper"><div><small>Основная книга V5</small><strong>{clanProfile.name} · {clanProfile.epithet}</strong><p>{clanProfile.disciplines.join(" · ")}<br />Политическая принадлежность выбирается отдельно</p></div><button type="button" onClick={applyClanFoundation}>Подставить основу</button><span>Заполнит названия Дисциплин и изъян по основной книге. Секту не меняет. Точки и парижские отклонения остаются за вами.</span></div>}
       <div className="sheet-text-grid identity-drives">
         <TextBox label="Амбиция" value={character.ambition} onChange={(value) => set("ambition", value)} />
         <TextBox label="Желание" value={character.desire} onChange={(value) => set("desire", value)} />
@@ -399,7 +403,7 @@ export function CharacterSheet({ character, onChange, onPrepareRoll }: Props) {
         <label><span>Потрачено</span><input type="number" min="0" value={character.experienceSpent} onChange={(event) => set("experienceSpent", Math.max(0, Number(event.target.value)))} /></label>
         <strong>Доступно: {Math.max(0, character.experienceTotal - character.experienceSpent)} XP</strong>
       </div>
-      <SectionTitle index="08" title="Совместимость PDF WOD5" hint="Все поля исходного PDF остаются в локальной копии" id="wod5" />
+      <SectionTitle index="08" title="Совместимость PDF" hint="Все поля исходного PDF остаются в локальной копии" id="wod5" />
       <Wod5Compatibility fields={character.wod5Pdf.fields} onChange={(fields) => set("wod5Pdf", { fields })} />
       {(selectedAttribute || selectedSkill) && (
         <div className="sheet-roll-dock" role="region" aria-label="Подготовка броска">

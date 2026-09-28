@@ -5,10 +5,11 @@ import { EncyclopediaPage } from "./components/EncyclopediaPage";
 import { FactionsPage } from "./components/FactionsPage";
 import { DomainPage } from "./components/DomainPage";
 import { RelationsPage } from "./components/RelationsPage";
+import { RulebookPage } from "./components/RulebookPage";
+import { interpretDice, type Die } from "./lib/dice";
 import { importWod5Pdf } from "./lib/wod5PdfImport";
 
-type Tab = "home" | "city" | "pedia" | "factions" | "domain" | "relations" | "characters" | "dice";
-type Die = { value: number; hunger: boolean };
+type Tab = "home" | "city" | "pedia" | "factions" | "domain" | "relations" | "characters" | "dice" | "guide";
 
 const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "home", label: "Сводка", index: "00" },
@@ -19,6 +20,7 @@ const NAV: { id: Tab; label: string; index: string }[] = [
   { id: "relations", label: "Связи", index: "05" },
   { id: "characters", label: "Персонажи", index: "06" },
   { id: "dice", label: "Броски", index: "07" },
+  { id: "guide", label: "Справочник", index: "08" },
 ];
 
 const CITY_PHOTOS = [
@@ -61,23 +63,9 @@ function DiceFace({ die, selectable = false, selected = false, onClick }: { die:
   return <button type="button" className={`die ${die.hunger ? "hunger" : "regular"} ${kind} ${selectable ? "selectable" : ""} ${selected ? "selected" : ""}`} aria-label={`${die.hunger ? "Кость Голода" : "Обычная кость"}: ${label}, выпало ${die.value}${selectable ? ". Можно выбрать для переброса за Волю" : ""}`} aria-pressed={selected} title={`${label} · ${die.value}${selectable ? " · выбрать для переброса" : ""}`} disabled={!selectable} onClick={onClick}><DiceGlyph kind={kind} /><small>{label}</small></button>;
 }
 
-function interpretDice(dice: Die[], difficulty: number) {
-  if (!dice.length) return { title: "Пул готов", text: "Укажи кости и соверши бросок.", success: false };
-  const successes = dice.filter((d) => d.value >= 6).length;
-  const tens = dice.filter((d) => d.value === 10);
-  const critPairs = Math.floor(tens.length / 2);
-  const total = successes + critPairs * 2;
-  const messy = critPairs > 0 && tens.some((d) => d.hunger);
-  const bestial = total < difficulty && dice.some((d) => d.hunger && d.value === 1);
-  if (messy) return { title: `Грязный крит · ${total} успехов`, text: "Ты добиваешься своего, но Зверь оставляет след.", success: true };
-  if (bestial) return { title: `Звериный провал · ${total} успехов`, text: "Неудача пробуждает Компульсию или иное проявление Зверя.", success: false };
-  if (critPairs) return { title: `Критический успех · ${total} успехов`, text: "Пара десяток добавила два дополнительных успеха.", success: true };
-  if (total >= difficulty) return { title: `Успех · ${total} против ${difficulty}`, text: "Действие удалось.", success: true };
-  return { title: `Провал · ${total} против ${difficulty}`, text: "Цель не достигнута — ситуация меняется.", success: false };
-}
 
 export function App() {
-  const [tab, setTab] = useState<Tab>("home");
+  const [tab, setTab] = useState<Tab>(() => location.hash.startsWith("#guide") ? "guide" : "home");
   const [activePlayer, setActivePlayer] = useState(loadActivePlayer);
   const [character, setCharacter] = useState<Character>(() => loadCharacter(activePlayer));
   const [saved, setSaved] = useState(true);
@@ -87,7 +75,7 @@ export function App() {
   const [dice, setDice] = useState<Die[]>([]);
   const [selectedRerolls, setSelectedRerolls] = useState<number[]>([]);
   const [willpowerRerolls, setWillpowerRerolls] = useState(0);
-  const [pursuedDesireLastSession, setPursuedDesireLastSession] = useState(false);
+  const [pursuedAmbitionLastSession, setPursuedAmbitionLastSession] = useState(false);
   const [rollId, setRollId] = useState(0);
   const [rollSource, setRollSource] = useState("");
   const [rouseResult, setRouseResult] = useState<number | null>(null);
@@ -95,6 +83,12 @@ export function App() {
   const importRef = useRef<HTMLInputElement>(null);
   const wod5PdfImportRef = useRef<HTMLInputElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const onHash = () => { if (location.hash.startsWith("#guide")) setTab("guide"); };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   useEffect(() => {
     setSaved(false);
@@ -120,7 +114,7 @@ export function App() {
     setDice([]);
     setSelectedRerolls([]);
     setWillpowerRerolls(0);
-    setPursuedDesireLastSession(false);
+    setPursuedAmbitionLastSession(false);
     setRollSource("");
     setSaved(true);
   };
@@ -128,10 +122,10 @@ export function App() {
   const result = useMemo(() => interpretDice(dice, difficulty), [dice, difficulty]);
   const willpowerSpent = character.willpowerDamage.filter((mark) => mark !== 0).length;
   const willpowerAvailable = Math.max(0, character.willpowerMax - willpowerSpent);
-  const canSpendWillpower = willpowerAvailable > 0 && character.willpowerDamage.includes(0);
+  const canSpendWillpower = character.willpowerDamage.some((mark) => mark !== 2);
   const canRerollForWillpower = canSpendWillpower && dice.length > 0 && willpowerRerolls === 0;
   const lightWillpowerRecovery = Math.max(character.attributes["Самообладание"] ?? 0, character.attributes["Упорство"] ?? 0);
-  const canRecoverWillpower = character.willpowerDamage.includes(1) || (pursuedDesireLastSession && character.willpowerDamage.includes(2));
+  const canRecoverWillpower = character.willpowerDamage.includes(1) || (pursuedAmbitionLastSession && character.willpowerDamage.includes(2));
 
   const roll = () => {
     const hungerCount = Math.min(hunger, pool);
@@ -167,8 +161,9 @@ export function App() {
     setCharacter((current) => {
       const willpowerDamage = [...current.willpowerDamage];
       const emptyMark = willpowerDamage.findIndex((mark) => mark === 0);
-      if (emptyMark < 0) return current;
-      willpowerDamage[emptyMark] = 1;
+      const spendMark = emptyMark >= 0 ? emptyMark : willpowerDamage.findIndex((mark) => mark === 1);
+      if (spendMark < 0) return current;
+      willpowerDamage[spendMark] = emptyMark >= 0 ? 1 : 2;
       return { ...current, willpowerDamage };
     });
     setSelectedRerolls([]);
@@ -177,6 +172,7 @@ export function App() {
 
   const restoreWillpower = () => {
     if (!canRecoverWillpower) return;
+    if (!confirm("Это восстановление в начале новой игровой встречи, с согласия ведущего. Применить его сейчас? Не применяй повторно за ту же встречу.")) return;
     setCharacter((current) => {
       const willpowerDamage = [...current.willpowerDamage];
       let lightStressToClear = Math.max(current.attributes["Самообладание"] ?? 0, current.attributes["Упорство"] ?? 0);
@@ -186,13 +182,13 @@ export function App() {
           lightStressToClear -= 1;
         }
       }
-      if (pursuedDesireLastSession) {
+      if (pursuedAmbitionLastSession) {
         const aggravatedIndex = willpowerDamage.findIndex((mark) => mark === 2);
         if (aggravatedIndex >= 0) willpowerDamage[aggravatedIndex] = 0;
       }
       return { ...current, willpowerDamage };
     });
-    setPursuedDesireLastSession(false);
+    setPursuedAmbitionLastSession(false);
   };
 
   const rollRouse = () => {
@@ -231,7 +227,7 @@ export function App() {
       setCharacter((current) => migrateCharacter({ ...current, ...result.patch }));
       window.alert(`Импортировано: ${result.imported.join(", ") || "совместимые данные"}.\n\n${result.warning}`);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Не удалось прочитать PDF WOD5.");
+      window.alert(error instanceof Error ? error.message : "Не удалось прочитать PDF.");
     }
   };
 
@@ -323,6 +319,7 @@ export function App() {
           </section>
         )}
 
+        {tab === "guide" && <RulebookPage />}
         {tab === "pedia" && <EncyclopediaPage />}
 
         {tab === "factions" && <FactionsPage />}
@@ -334,14 +331,14 @@ export function App() {
             <div className="page-head"><div><div className="eyebrow">Досье игроков / локальные копии</div><h2>Персонажи</h2></div><div className="save-state"><i className={saved ? "ok" : ""} />{saved ? "сохранено локально" : "сохранение…"}</div></div>
             <div className="player-slot-bar" aria-label="Листы персонажей игроков">{[1, 2, 3, 4].map((player) => <button type="button" key={player} className={activePlayer === player ? "active" : ""} onClick={() => selectPlayer(player)}><small>ЛИСТ / 0{player}</small><strong>{player === activePlayer ? character.name || "Без имени" : `Игрок ${player}`}</strong><i>{activePlayer === player ? `${character.clan} · ${character.concept}` : "Открыть досье"}</i></button>)}</div>
             <div className="characters-local-note"><span>ЭТОТ БРАУЗЕР</span><p>У каждого игрока свои локальные данные. Выбери слот, чтобы вести отдельный лист; для переноса между устройствами используй экспорт и импорт JSON.</p></div>
-            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт JSON</button><button onClick={() => wod5PdfImportRef.current?.click()}>Импорт PDF WOD5</button><a className="external" href="https://wta5.ru/vampire/character-creator" target="_blank" rel="noreferrer">Создать на WOD5 ↗</a><input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => { void importSheet(event.target.files?.[0]); event.target.value = ""; }} /><input ref={wod5PdfImportRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { void importWod5Sheet(event.target.files?.[0]); event.target.value = ""; }} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист этого игрока?") && setCharacter(migrateCharacter(defaultCharacter))}>Сбросить этот лист</button></div>
+            <div className="sheet-toolbar"><button onClick={exportSheet}>Экспорт JSON</button><button onClick={() => importRef.current?.click()}>Импорт JSON</button><button onClick={() => wod5PdfImportRef.current?.click()}>Импорт PDF</button><input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => { void importSheet(event.target.files?.[0]); event.target.value = ""; }} /><input ref={wod5PdfImportRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { void importWod5Sheet(event.target.files?.[0]); event.target.value = ""; }} /><button className="danger-link" onClick={() => confirm("Вернуть пустой лист этого игрока?") && setCharacter(migrateCharacter(defaultCharacter))}>Сбросить этот лист</button></div>
             <CharacterSheet character={character} onChange={setCharacter} onPrepareRoll={prepareRoll} />
           </section>
         )}
 
         {tab === "dice" && (
           <section className="page dice-page">
-            <div className="page-head"><div><div className="eyebrow">Механика V5 / локальный протокол</div><h2>Броски</h2></div><a className="external" href="https://wta5.ru/vampire/rules" target="_blank" rel="noreferrer">Полные правила ↗</a></div>
+            <div className="page-head"><div><div className="eyebrow">Механика V5 / локальный протокол</div><h2>Броски</h2></div><a href="#guide/basics">Правила из книги →</a></div>
             <div className="dice-layout">
               <div className="roller panel">
                 <span className="panel-label">{rollSource ? `Проверка / ${rollSource}` : "Собрать пул"}</span>
@@ -349,11 +346,11 @@ export function App() {
                 <button className="roll-button" onClick={roll}><span>БРОСИТЬ</span><small>{pool - Math.min(pool, hunger)} обычных + {Math.min(pool, hunger)} голодных</small></button>
                 <div className={`dice-tray ${dice.length ? "rolling" : ""}`} key={`tray-${rollId}`}>{dice.length ? dice.map((die, i) => <div className="die-stage" style={{ animationDelay: `${i * 38}ms` }} key={`${rollId}-${i}-${die.value}`}><DiceFace die={die} selectable={!die.hunger && canRerollForWillpower} selected={selectedRerolls.includes(i)} onClick={() => toggleRerollDie(i)} /></div>) : <p>Результат появится здесь</p>}</div>
                 <div className="willpower-reroll">
-                  <div className="willpower-reroll-copy"><strong>{willpowerRerolls > 0 ? "Переброс уже использован" : !canSpendWillpower ? "Нет доступной Воли" : selectedRerolls.length ? `Выбрано: ${selectedRerolls.length} из 3` : "Воля / действия"}</strong><span>{dice.length === 0 ? "После броска выбери до трёх белых костей. За одну проверку можно сделать один переброс; кости Голода и проверки Голода, Человечности или Воли перебрасывать нельзя." : "Выбери 1–3 белые кости. Один переброс на проверку; кости Голода и проверки Голода, Человечности или Воли перебрасывать нельзя."}</span><small className="willpower-available">Доступно пунктов Воли: {willpowerAvailable}</small>
-                    <label className="willpower-desire-check"><input type="checkbox" checked={pursuedDesireLastSession} onChange={(event) => setPursuedDesireLastSession(event.target.checked)} /><span>В прошлой встрече активно добивался Желания — можно снять 1 тяжёлый стресс</span></label>
+                  <div className="willpower-reroll-copy"><strong>{willpowerRerolls > 0 ? "Переброс уже использован" : !canSpendWillpower ? "Воля полностью повреждена тяжёлым стрессом" : selectedRerolls.length ? `Выбрано: ${selectedRerolls.length} из 3` : "Воля / действия"}</strong><span>{dice.length === 0 ? "После броска выбери до трёх белых костей. За одну проверку можно сделать один переброс; кости Голода и проверки Голода, Человечности или Воли перебрасывать нельзя." : "Выбери 1–3 белые кости. Один переброс на проверку; кости Голода и проверки Голода, Человечности или Воли перебрасывать нельзя."}</span><small className="willpower-available">Неповреждённая Воля: {willpowerAvailable}. При заполнении лёгким стрессом трата превращает одну клетку в тяжёлую.</small>
+                    <label className="willpower-desire-check"><input type="checkbox" checked={pursuedAmbitionLastSession} onChange={(event) => setPursuedAmbitionLastSession(event.target.checked)} /><span>В прошлой встрече активно добивался Амбиции / Цели — можно снять 1 тяжёлый стресс</span></label>
                   </div>
                   <div className="willpower-actions"><button type="button" disabled={!selectedRerolls.length || !canRerollForWillpower} onClick={rerollForWillpower}>{willpowerRerolls > 0 ? "Переброс использован" : "Перебросить · 1 Воля"}</button><button type="button" className="restore-willpower" disabled={!canRecoverWillpower} onClick={restoreWillpower}>Восстановить Волю</button></div>
-                  <small className="willpower-recovery-note">В начале встречи восстанавливается лёгкий стресс: количество пунктов равно большему значению Самообладания или Упорства{pursuedDesireLastSession ? "; при условии выше также снимается 1 тяжёлый стресс" : "."}</small>
+                  <small className="willpower-recovery-note">В начале встречи восстанавливается лёгкий стресс: количество пунктов равно большему значению Самообладания или Упорства{pursuedAmbitionLastSession ? "; при условии выше также снимается 1 тяжёлый стресс" : "."}</small>
                 </div>
                 <div className={`result ${result.success ? "success" : ""}`} key={`result-${rollId}`}><small>Результат</small><strong>{result.title}</strong><p>{result.text}</p></div>
               </div>
@@ -366,7 +363,7 @@ export function App() {
                   <button type="button" onClick={rollRouse}>Бросить одну кость</button>
                   {rouseResult !== null && rouseResult < 6 && character.hunger < 5 && <button type="button" className="apply-hunger" disabled={rouseApplied} onClick={applyRouseHunger}>{rouseApplied ? "Голод применён" : `Применить: Голод ${character.hunger} → ${character.hunger + 1}`}</button>}
                 </div>
-                <h3>Читаем кости</h3><dl className="dice-key"><div><dt><span className="key-glyph failure"><DiceGlyph kind="failure" /></span>Провал</dt><dd>1–5 не дают успехов</dd></div><div><dt><span className="key-glyph success"><DiceGlyph kind="success" /></span>Успех</dt><dd>6–9 дают один успех</dd></div><div><dt><span className="key-glyph critical"><DiceGlyph kind="critical" /></span>Крит</dt><dd>каждая пара десяток считается четырьмя успехами</dd></div><div><dt><span className="key-glyph beast"><DiceGlyph kind="beast" /></span>Зверь</dt><dd>только красная 1 и только при общем провале</dd></div></dl><div className="rule-note">Красная критическая грань делает крит грязным, только если её десятка вошла в критическую пару. Кости Голода заменяют обычные кости, но не добавляются к пулу. Волю нельзя тратить на переброс проверок Голода, Человечности и самой Воли.</div><a href="https://wta5.ru/vampire/rules/dice-system" target="_blank" rel="noreferrer">Подробнее о проверках ↗</a>
+                <h3>Читаем кости</h3><dl className="dice-key"><div><dt><span className="key-glyph failure"><DiceGlyph kind="failure" /></span>Провал</dt><dd>1–5 не дают успехов</dd></div><div><dt><span className="key-glyph success"><DiceGlyph kind="success" /></span>Успех</dt><dd>6–9 дают один успех</dd></div><div><dt><span className="key-glyph critical"><DiceGlyph kind="critical" /></span>Крит</dt><dd>каждая пара десяток считается четырьмя успехами</dd></div><div><dt><span className="key-glyph beast"><DiceGlyph kind="beast" /></span>Зверь</dt><dd>только красная 1 и только при общем провале</dd></div></dl><div className="rule-note">При победе с парой десяток любая красная десятка делает крит грязным — выбирать «безопасную пару» нельзя. Кости Голода заменяют обычные кости, но не добавляются к пулу. Волю нельзя тратить на переброс проверок Голода, Человечности и самой Воли.</div><a href="#guide/basics/hunger-dice">Подробнее о проверках →</a>
               </aside>
             </div>
           </section>

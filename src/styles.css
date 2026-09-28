@@ -1139,3 +1139,35 @@ footer .legal { text-align: right; }
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { animation-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+.rulebook-scope { max-width: 960px; color: #b8b7b2; line-height: 1.75; }
+.book-help-link { display: block; color: #bb8391; font: 12px/1.6 Inter, Arial, sans-serif; margin-top: 8px; }
+.rulebook-controls { margin: 28px 0; padding: 20px; border: 1px solid #414449; background: #131519; }
+.rulebook-back { position: sticky; bottom: 12px; display: block; margin: 24px 0 0 auto; padding: 10px 14px; border: 1px solid #87505e; background: #16171b; color: #e3d9db; cursor: pointer; z-index: 2; }
+.rulebook-controls label { display: grid; gap: 10px; color: #d0cec7; }
+.rulebook-controls input { width: 100%; padding: 12px; border: 1px solid #585b60; background: #090b0e; color: #eeeae1; font: 16px Inter, Arial, sans-serif; }
+.rulebook-controls nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.rulebook-controls nav a { display: flex; gap: 10px; padding: 10px 14px; border: 1px solid #494b50; color: #d8d6cf; text-decoration: none; }
+.rulebook-controls nav a.active { border-color: #b33150; background: #33141e; color: #fff; }
+.rulebook-controls small { color: #aaa9a4; }
+.rulebook-section > h3 { font-size: 30px; margin: 30px 0 12px; }
+.rulebook-section > p { color: #b7b5af; line-height: 1.65; }
+.rulebook-card { border: 1px solid #414449; background: #14161a; margin: 12px 0; scroll-margin-top: 24px; }
+.rulebook-card summary { cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px; }
+.rulebook-card summary > span { display: grid; gap: 8px; }
+.rulebook-card summary strong { font: 600 18px/1.4 Inter, Arial, sans-serif; color: #ece9e0; }
+.rulebook-tags { color: #bc8c97; font: normal 11px/1.5 Inter, Arial, sans-serif; letter-spacing: .06em; }
+.rulebook-page .page-head { gap: 20px; }
+@media (max-width: 650px) { .rulebook-page .page-head { flex-direction: column; align-items: flex-start; gap: 12px; } }
+.rulebook-card summary span span { font: 14px/1.6 Inter, Arial, sans-serif; color: #bab8b1; }
+.rulebook-card summary small { flex: 0 0 160px; color: #a9a7a0; line-height: 1.6; }
+.rulebook-card[open] { border-left: 3px solid #a72042; }
+.rulebook-content { padding: 0 22px 24px; font: 15px/1.8 Inter, Arial, sans-serif; color: #d2cfc6; }
+.rulebook-content p { margin: 16px 0; }
+.rulebook-content li { margin: 7px 0; }
+.rulebook-content a { color: #d47f94; }
+.rulebook-table { overflow-x: auto; margin: 18px 0; }
+.rulebook-table table { width: 100%; border-collapse: collapse; text-align: left; }
+.rulebook-table th, .rulebook-table td { border: 1px solid #4a4c51; padding: 10px 12px; vertical-align: top; min-width: 110px; }
+.rulebook-table th { color: #ece9e1; background: #202228; }
+@media (max-width: 650px) { .rulebook-card summary { flex-direction: column; align-items: flex-start; padding: 16px; gap: 10px; } .rulebook-card summary small { flex-basis: auto; } .rulebook-content { padding: 0 16px 18px; } .rulebook-controls { padding: 14px; } .rulebook-controls nav a { padding: 10px; } }

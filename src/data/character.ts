@@ -1,3 +1,7 @@
+import { CORE_CLAN_PROFILES } from "./rulebookClans";
+import { VERIFIED_DISCIPLINE_NAMES } from "./rulebookDisciplines";
+import { VERIFIED_PREDATOR_NAMES } from "./rulebookPredators";
+import { VERIFIED_ADVANTAGE_NAMES, VERIFIED_FLAW_NAMES } from "./rulebookTraits";
 export type Damage = 0 | 1 | 2;
 export type TraitEntry = { id: string; name: string; rating: number; note: string };
 export type DisciplineEntry = { id: string; name: string; rating: number; powers: string };
@@ -72,42 +76,17 @@ export const SKILL_GROUPS = [
   ["Ментальные", ["Академические знания", "Бдительность", "Финансы", "Расследование", "Медицина", "Оккультизм", "Политика", "Естественные науки", "Технологии"]],
 ] as const;
 
-export const DISCIPLINE_NAMES = [
-  "Анимализм", "Алхимия тонкой крови", "Доминирование",
-  "Забвение", "Затемнение", "Кровавое чародейство",
-  "Могущество", "Превращение", "Присутствие", "Прорицание",
-  "Стойкость", "Стремительность",
-];
+export const DISCIPLINE_NAMES: readonly string[] = VERIFIED_DISCIPLINE_NAMES;
 
-export const CLAN_PROFILES: ClanProfile[] = [
-  { name: "Бану Хаким", epithet: "судьи, убийцы и хранители закона крови", disciplines: ["Кровавое чародейство", "Стремительность", "Затемнение"], bane: "Витэ других Сородичей слишком притягательно; правосудие легко превращается в зависимость.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/banu-haqim" },
-  { name: "Бруха", epithet: "бунтари, мятежники и революционеры", disciplines: ["Стремительность", "Могущество", "Присутствие"], bane: "Ярость ближе к поверхности; сопротивляться безумию труднее.", usualSect: "Анархи", referenceUrl: "https://wta5.ru/vampire/clans/brujah" },
-  { name: "Гангрел", epithet: "дикие и свободные, ближе к Зверю, чем к человеку", disciplines: ["Анимализм", "Стойкость", "Превращение"], bane: "Безумие оставляет временные звериные черты.", usualSect: "Независимые", referenceUrl: "https://wta5.ru/vampire/clans/gangrel" },
-  { name: "Геката", epithet: "семья мертвецов, некроманты и повелители призраков", disciplines: ["Прорицание", "Стойкость", "Забвение"], bane: "Поцелуй причиняет жертве мучительную боль вместо экстаза.", usualSect: "Независимые", referenceUrl: "https://wta5.ru/vampire/clans/hecata" },
-  { name: "Ласомбра", epithet: "повелители теней и власти во мраке", disciplines: ["Доминирование", "Забвение", "Могущество"], bane: "Образ и голос искажаются в отражениях и электронных записях.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/lasombra" },
-  { name: "Малкавиан", epithet: "провидцы и оракулы разбитых зеркал", disciplines: ["Прорицание", "Доминирование", "Затемнение"], bane: "Кровь усиливает внутреннюю травму и нарушения восприятия.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/malkavian" },
-  { name: "Министерство", epithet: "змеи, искусители и жрецы тёмных богов", disciplines: ["Затемнение", "Присутствие", "Превращение"], bane: "Сверхъестественный и естественный яркий свет особенно мучителен.", usualSect: "Анархи", referenceUrl: "https://wta5.ru/vampire/clans/ministry" },
-  { name: "Носферату", epithet: "изгои и хранители секретов, которые знают всё", disciplines: ["Анимализм", "Затемнение", "Могущество"], bane: "Кровь делает облик отталкивающим и осложняет общение со смертными.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/nosferatu" },
-  { name: "Равнос", epithet: "бродяги, обманщики и мастера иллюзий", disciplines: ["Анимализм", "Затемнение", "Присутствие"], bane: "Долгое пребывание на одном месте заставляет кровь гореть.", usualSect: "Независимые", referenceUrl: "https://wta5.ru/vampire/clans/ravnos" },
-  { name: "Салюбри", epithet: "целители, мученики и преследуемые праведники", disciplines: ["Прорицание", "Доминирование", "Стойкость"], bane: "При использовании сил и питье может открываться третий глаз; кровь особенно желанна другим.", usualSect: "Независимые", referenceUrl: "https://wta5.ru/vampire/clans/salubri" },
-  { name: "Тореадор", epithet: "художники, эстеты и хищники в шёлке", disciplines: ["Прорицание", "Стремительность", "Присутствие"], bane: "Безобразная среда мешает действовать, а совершенство способно зачаровать.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/toreador" },
-  { name: "Тремер", epithet: "маги крови, узурпаторы бессмертия", disciplines: ["Прорицание", "Кровавое чародейство", "Доминирование"], bane: "Кровные узы и внутренняя иерархия работают не так, как прежде.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/tremere" },
-  { name: "Цимисхи", epithet: "повелители плоти, людей и территорий", disciplines: ["Анимализм", "Доминирование", "Превращение"], bane: "Для сна необходима связь с избранным владением или собственностью.", usualSect: "Шабаш / независимые", referenceUrl: "https://wta5.ru/vampire/clans/tzimisce" },
-  { name: "Вентру", epithet: "правители, стратеги и голубая кровь", disciplines: ["Доминирование", "Стойкость", "Присутствие"], bane: "Питаться можно только от строго определённого типа смертных.", usualSect: "Камарилья", referenceUrl: "https://wta5.ru/vampire/clans/ventrue" },
-  { name: "Каитиф", epithet: "безклановые, отверженные и бесхозные", disciplines: [], bane: "Не имеют кланового наследия и платят больше опыта за Дисциплины.", usualSect: "Любая / вне сект", referenceUrl: "https://wta5.ru/vampire/clans/caitiff" },
-  { name: "Тонкокровный", epithet: "на грани жизни и смерти, нарушающие все правила", disciplines: ["Алхимия тонкой крови"], bane: "Могущество крови 0; достоинства и недостатки тонкой крови определяют границы возможного.", usualSect: "Вне сект", referenceUrl: "https://wta5.ru/vampire/clans/thin-blooded" },
-];
+export const CLAN_PROFILES: ClanProfile[] = CORE_CLAN_PROFILES;
 
 export const CLAN_NAMES = ["Не определён", ...CLAN_PROFILES.map((clan) => clan.name), "Другое / домашняя версия"];
-export const SECT_NAMES = ["Камарилья", "Анархи", "Независимые", "Шабаш", "Аширра", "Вне сект", "Не определено", "Другое / домашняя версия"];
-export const PREDATOR_TYPES = [
-  "Уличный кот", "Сирена", "Песочный человек", "Мешочник", "Фермер", "Гробокопатель",
-  "Мясник", "Консенсуалист", "Королева сцены", "Кровосос", "Осирис", "Другое / домашняя версия",
-];
+export const SECT_NAMES = ["Камарилья", "Анархи", "Шабаш", "Автархи", "Независимые", "Вне сект", "Не определено", "Другое / домашняя версия"];
+export const PREDATOR_TYPES = [...VERIFIED_PREDATOR_NAMES, "Другое / домашняя версия"];
 export const RESONANCES = ["Сангвинический", "Холерический", "Меланхолический", "Флегматический", "Животный", "Пустой", "Не определён"];
-export const GENERATIONS = ["9", "10", "11", "12", "13", "14", "15", "16", "Неизвестно"];
-export const ADVANTAGE_NAMES = ["Союзники", "Контакты", "Стадо", "Убежище", "Ресурсы", "Влияние", "Маска", "Домен", "Известность", "Внешность", "Статус", "Свита", "Предание", "Другое"];
-export const FLAW_NAMES = ["Враг", "Тёмная тайна", "Преследователь", "Зависимость", "Ограничение добычи", "Явный хищник", "Плохая репутация", "Без ресурсов", "Другое"];
+export const GENERATIONS = ["4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "Неизвестно"];
+export const ADVANTAGE_NAMES = [...VERIFIED_ADVANTAGE_NAMES, "Другое"];
+export const FLAW_NAMES = [...VERIFIED_FLAW_NAMES, "Другое"];
 
 const attributes = Object.fromEntries(ATTRIBUTE_GROUPS.flatMap(([, names]) => names.map((name) => [name, 1])));
 const skills = Object.fromEntries(SKILL_GROUPS.flatMap(([, names]) => names.map((name) => [name, 0])));

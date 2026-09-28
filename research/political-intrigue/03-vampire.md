@@ -3,8 +3,7 @@
 ## Прочитанные источники
 
 - Rick Heinz, [GM Tips for V5 Relationship Charts](https://nerdist.com/article/gm-tips-for-vampire-the-masquerades-5th-edition-relationship-charts/)
-- WOD5, [Достоинства и Недостатки](https://wta5.ru/vampire/rules/merits-flaws)
-- WOD5, [Типы котерий](https://wta5.ru/vampire/coteries)
+- Основная книга V5, с. 179–198: преимущества, недостатки, домен и котерии. Прежний веб-источник исключён; общие политические советы ниже не являются дословными правилами.
 - Renegade Game Studios, [Courts of the Damned](https://renegadegamestudios.com/blog/preorder-courts-of-the-damned-/)
 - Обсуждение, [How to run a good intrigue-based chronicle](https://www.reddit.com/r/WhiteWolfRPG/comments/dgw337/how_to_run_a_good_intrigue_based_chronicle/)
 - The Geek Lyfe, [Tips for Running a Memorable Vampire Chronicle](https://www.thegeeklyfe.com/5-essential-tips-for-running-a-memorable-vampire-the-masquerade-chronicle/)
@@ -46,4 +45,3 @@
 - Использовать долги и доступ к доменам как валюту союзов.
 - Дать старейшинам основания бояться не только разоблачения, но и утраты естественной монополии на могущество.
 - Сделать котерию практическим союзом с общей уязвимостью.
-

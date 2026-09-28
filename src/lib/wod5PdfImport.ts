@@ -18,21 +18,31 @@ const SKILL_NAMES = [
 const DISCIPLINE_DOT_STARTS = [181, 191, 201, 186, 196, 206];
 
 const textAliases: Record<string, string> = {
-  "Бродячий Кот": "Уличный кот",
-  "Песочный Человек": "Песочный человек",
-  "Королева Сцены": "Королева сцены",
-  "Кровопийца": "Кровосос",
+  "Бродячий Кот": "Налётчик",
+  "Уличный кот": "Налётчик",
+  "Песочный Человек": "Морфей",
+  "Песочный человек": "Морфей",
+  "Королева Сцены": "Тусовщик",
+  "Королева сцены": "Тусовщик",
+  "Кровопийца": "Бестия",
+  "Кровосос": "Бестия",
+  "Осирис": "Идол",
+  "Сирена": "Искуситель",
+  "Мешочник": "Суррогатчик",
+  "Консенсуалист": "Джентльмен",
+  "Мясник": "Семьянин",
   "Уличное чутьё": "Знание улиц",
   "Гуманитарные науки": "Академические знания",
   "Наблюдательность": "Бдительность",
   "Техника": "Технологии",
   "Обаяние": "Харизма",
   "Манипуляция": "Манипулирование",
-  "Ясновидение": "Прорицание",
-  "Величие": "Присутствие",
-  "Мощь": "Могущество",
-  "Сокрытие": "Затемнение",
-  "Метаморфозы": "Превращение",
+  "Прорицание": "Ясновидение",
+  "Присутствие": "Величие",
+  "Могущество": "Мощь",
+  "Затемнение": "Сокрытие",
+  "Превращение": "Метаморфозы",
+  "Алхимия тонкой крови": "Алхимия слабокровных",
   "Магия Крови": "Кровавое чародейство",
   "Кровавое Колдовство": "Кровавое чародейство",
   "Министри": "Министерство",
@@ -86,11 +96,11 @@ async function loadPdfRuntime() {
 }
 
 export async function importWod5Pdf(file: File): Promise<Wod5PdfImport> {
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) throw new Error("Нужен PDF-файл из конструктора WOD5.");
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) throw new Error("Нужен заполняемый PDF старого формата листа.");
   const getDocument = await loadPdfRuntime();
   const pdf = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
   const fields = (await pdf.getFieldObjects()) as PdfFields | null;
-  if (!fields?.clan || !fields?.predator) throw new Error("Не удалось узнать этот PDF. Поддерживается лист, экспортированный из конструктора WOD5.");
+  if (!fields?.clan || !fields?.predator) throw new Error("Не удалось узнать этот PDF. Поддерживается прежний двухстраничный лист с полями clan и predator; импорт не подтверждает правильность его правил.");
 
   const patch: Partial<Character> = {};
   const imported: string[] = [];
@@ -139,7 +149,7 @@ export async function importWod5Pdf(file: File): Promise<Wod5PdfImport> {
 
   const advantages: TraitEntry[] = Array.from({ length: 11 }, (_, index) => {
     const name = getText(fields, `advantages${index + 1}`);
-    return name ? { id: `wod5-trait-${index + 1}`, name, rating: rating(fields, 221 + index * 5), note: "Импортировано из PDF WOD5" } : null;
+    return name ? { id: `wod5-trait-${index + 1}`, name, rating: rating(fields, 221 + index * 5), note: "Импортировано из прежнего PDF; проверь по книге" } : null;
   }).filter((item): item is TraitEntry => item !== null);
   if (advantages.length) { patch.advantages = advantages; imported.push("advantages"); }
 
